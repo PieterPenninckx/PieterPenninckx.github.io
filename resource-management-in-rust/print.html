@@ -1,0 +1,781 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title> - Resource management in Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Resource management in the Rust programming language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <base href="">
+
+        <link rel="stylesheet" href="book.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <link rel="shortcut icon" href="favicon.png">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme -->
+        
+
+        
+
+        <!-- Fetch Clipboard.js from CDN but have a local fallback -->
+        <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+        <script>
+            if (typeof Clipboard == 'undefined') {
+                document.write(unescape("%3Cscript src='clipboard.min.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch JQuery from CDN but have a local fallback -->
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined') {
+                document.write(unescape("%3Cscript src='jquery.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch store.js from local - TODO add CDN when 2.x.x is available on cdnjs -->
+        <script src="store.js"></script>
+
+        <!-- Custom JS script -->
+        
+
+    </head>
+    <body class="light">
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme = store.get('theme');
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            $('body').removeClass().addClass(theme);
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var sidebar = store.get('sidebar');
+            if (sidebar === "hidden") { $("html").addClass("sidebar-hidden") }
+            else if (sidebar === "visible") { $("html").addClass("sidebar-visible") }
+        </script>
+
+        <div id="sidebar" class="sidebar">
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><a href="./resources-in-rust.html"><strong>2.</strong> Resources in Rust</a></li></ul>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page" tabindex="-1">
+                <div id="menu-bar" class="menu-bar">
+                    <div class="left-buttons">
+                        <i id="sidebar-toggle" class="fa fa-bars"></i>
+                        <i id="theme-toggle" class="fa fa-paint-brush"></i>
+                    </div>
+
+                    <h1 class="menu-title">Resource management in Rust</h1>
+
+                    <div class="right-buttons">
+                        <i id="print-button" class="fa fa-print" title="Print this book"></i>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <a class="header" href="print.html#resources in general" id="resources in general"><h1>Resources in general</h1></a>
+<p>We start with a simple specific example in pseudo-code.
+Then we give some general theory and we conclude with a more extended example
+in Rust.</p>
+<a class="header" href="print.html#a simple example" id="a simple example"><h2>A simple example</h2></a>
+<p>Consider the following pseudo-code.</p>
+<pre><code>WRITE_TO_FILE()
+1   file_descriptor ← OPEN_FILE(&quot;MyDocument.txt&quot;)
+2   text_to_write ← &quot;Hello, World!&quot;
+3   WRITE_TEXT(file_descriptor, text_to_write)
+4   CLOSE_FILE(file_descriptor)
+</code></pre>
+<p>On line 1, we call the function <code>OPEN_FILE</code> with as parameter the
+name of the file we want to open.
+This function <code>OPEN_FILE</code>, wich we do not give pseudo-code for,
+communicates to the operating system and asks to open the file with the given
+file name.
+For simplicity, we omit error handling in this example.</p>
+<p>In general, an application can open more than one file.
+So if the application asks the operating system to write to a file, the
+operating system has to know: &quot;which file are you referring to?&quot;.
+For this reason, the function <code>OPEN_FILE</code> returns an identifier
+that will be used later on in the communication with the operating system to
+specify which file the application is talking about.
+In the case of a file, this identifier is called a <em>file descriptor</em>.
+It is usually a number (an integer).
+In most libraries, the file descriptor is wrapped in another data
+type that represents the file.
+In our example, we just assume that we get the bare file descriptor.</p>
+<p>Line 2 is nothing special: we just store the text we want to write in a variable.</p>
+<p>On line 3, we call the function <code>WRITE_TEXT</code> to write this text to the file.
+The function <code>WRITE_TEXT</code> asks the operating system to write the given text
+to a file.
+The first parameter, for which we pass the variable <code>file_descriptor</code> is used
+to specify to which file the text should be written.</p>
+<p>On line 4, we call the function <code>CLOSE_FILE</code> to close the file.
+Again, we pass the variable <code>file_descriptor</code> to specify which file must be
+closed.</p>
+<p>Excercise. In the previous example, the programmer can make a bug for instance
+by forgetting to close the file. There are many mistakes like that.
+Write down a number of them. We will come back to this later on.</p>
+<a class="header" href="print.html#theory" id="theory"><h2>Theory</h2></a>
+<p>In the introduction example, we have seen a simple program that communicates
+to the operating system to write some text to a file.</p>
+<p>The file is a specific example of the more broad concept of a <em>resource</em>.
+Other examples of resources include</p>
+<ul>
+<li>a network socket</li>
+<li>a connection to a server</li>
+<li>a block of memory</li>
+<li>access to the screen, soundcard, printer or any other device</li>
+<li>a mutual exclusive lock.</li>
+</ul>
+<p>Some resources correspond to physical devices, other correspond to virtual
+concepts (such as the mutual exclusive lock).</p>
+<p>Resources are managed by a resource manager, usually the operation system.
+The resource manager distributes handles that give access to this resource.
+In the introduction example for instance, the handle was a file descriptor.</p>
+<p>When a process wants to access a resource, it asks the resource manager for a
+handle that gives access to the resource.
+In the introduction example, the function <code>OPEN_FILE</code> asked the operating system
+(the resource manager) for a file descriptor (the handle) that gives acces to
+the file (the resource).
+The resource manager may refuse access, or open the resource on behalf
+of the process and hand over the handle to the process.
+If the resource was opened successfully, the application stores the handle in
+memory, to be used later on in the communication with the resource manager.</p>
+<p>When the process has finished using the resource, it communicates to the resource
+manager that the resource can be released: &quot;Hey, I don't need this resource anymore&quot;.
+In the introduction example, this was the call to the <code>CLOSE_FILE</code> function.
+After that point, the process should not use the handle anymore.
+When the resource manager is informed that a resource is not needed anymore,
+it can either close the resource, or it knows that
+the resource can be re-used by another process that wants to use the resource again.</p>
+<p>In general, using a resource looks as follows:</p>
+<pre><code>USE_RESOURCE()
+1   handle ← OPEN_RESOURCE(parameters)
+2   USE_RESOURCE(handle)
+3   RELEASE_RESOURCE(handle)
+</code></pre>
+<a class="header" href="print.html#memory as a resource" id="memory as a resource"><h1>Memory as a resource</h1></a>
+<p>Memory is a resource just like any other, but in all programming
+languages that I know, it is handled differently.</p>
+<p>One, quite obvious, difference is that in many programming languages, memory
+does not have to be released explicitly because a garbage collector takes care
+of that. Although Rust does not rely heavily on garbage collectors, I will spend
+some time explaining garbage collectors.</p>
+<p>A second difference is more subtle and we will discuss it later on.</p>
+<p>But first, let us start with some examples of how memory is used in programming
+languages you are probably more familiar with.</p>
+<a class="header" href="print.html#introduction example" id="introduction example"><h2>Introduction example</h2></a>
+<p>Let us give one example in different programming languages: creating an
+array or a vector or something similar of numbers, and storing the sum of
+the numbers in the first element of the vector.</p>
+<p>This is how this looks like in Python:</p>
+<pre><code class="language-python">def compute_sum():
+    numbers = [1, 2, 3]
+    numbers[0] = numbers[0] + numbers[1] + numbers[2]
+</code></pre>
+<p>In Java or C#:</p>
+<pre><code class="language-java">void ComputeSum() {
+    int[] numbers = {1, 2, 3};
+    numbers[0] = numbers[0] + numbers[1] + numbers[2];
+}
+</code></pre>
+<p>In Javascript:</p>
+<pre><code class="language-javascript">function ComputeSum() {
+    var numbers = [1, 2, 3];
+    numbers[0] = numbers[0] + numbers[1] + numbers[2];
+}
+</code></pre>
+<p>If you more familiar with a programming language for which no example was
+given, you can probably write down this simple function yourself.</p>
+<p>On the first line in the function body, an array is created, containing the
+numbers one, two and three.
+When any of the examples above is is executed, under the hood, a part
+of memory is reserved to store the numbers. The variable <code>numbers</code> contains
+somehow a handle for the piece of memory that was reserved.</p>
+<p>On the second line, the handle stored in <code>numbers</code> is used multiple times to
+compute a simple sum and store it in the first element of the array.</p>
+<p>If the general approach to using a resource was used, then there would be a
+third line on which the resource manager was informed that we don't need the
+memory for the array anymore. There is no line of code like that.</p>
+<p>If memory was like any other resource in these programming languages, then you
+would get in trouble when this function was called many, many times. Each and
+every time, the function would reserve yet another piece of memory to store
+its array. After a while, there would be no unused memory left and your
+program would crash. In practice, there is a piece of your application that
+prevents this from happening: the garbage collector.</p>
+<a class="header" href="print.html#garbage collectors" id="garbage collectors"><h2>Garbage collectors</h2></a>
+<p>In the previous section, we illustrated that in many programming
+languages, the user does not have to explicitely indicate that a piece of
+memory is no longer needed. But if the application were to only reserve more
+and more memory, it would soon run out of memory. So ultimately, somehow the
+application has to indicate that some pieces of memory are not used anymore and
+may be re-used for something else.</p>
+<p>This is the task of the garbage collector.
+The garbage collector is a piece of software designed only for this goal
+and it runs together with your application.
+In order to know which pieces of
+memory may be released, the garbage collector analyses the state of the program
+as it runs.</p>
+<p>There are many techniques for garbage collecting.
+One technique, called 'reference counting' can be implemented relatively easy
+and requires only a little help from the programming language.
+Other techniques require extensive support from the programming languages.</p>
+<p>Most recent programming languages, including Python, Javascript, Java, C# and Go
+offer extensive support for garbage collecting. In these languages, you
+typically rely on the garbage collector for nearly everything you do.</p>
+<p>C++, Rust and Swift have enough features to implement reference counting,
+but do not offer any support for garbage collection beyond that.
+For this reason, it is often said that these languages do not have garbage
+collection, although technically speaking, that statement is not correct.</p>
+<p>Reference counting is only one technique to manage memory in Rust, however, and
+it is even not used that often. Depending on the type of software you are
+writing, you can write a complete program and then realize that you never used
+reference counting.</p>
+<a class="header" href="print.html#not all memory needs to be acquired" id="not all memory needs to be acquired"><h2>Not all memory needs to be acquired</h2></a>
+<p>Memory as a resource is a special case, because the handle that gives access
+to the resource is stored in memory as well.
+So if you want to use memory, then you need to get a handle that gives access to the memory.
+You then need to store this handle in memory, and for this, you have to acquire memory.
+Eum... this is a &quot;the chicken or the egg&quot; dilemma!</p>
+<p>This dilemma is solved by giving the application a dedicated piece of
+memory that can be used without needing to acquire or release it.
+In fact, each application gets at least two dedicated pieces of memory without
+needing to acquire or release it.</p>
+<p>First there is a piece of memory that can be used by the application for data
+that has a fixed size and lives essentially as long as the application runs.
+It is typically used for constants (e.g. if you want to store the number π,
+or string constants). This is called <em>static memory</em>.
+You can do complicated stuff with static memory, but for simplicity, let us
+assume that you will only want to store constants in static memory.</p>
+<p>Secondly, there is a piece of memory that is used to store the local variables
+of the functions and the parameters that are passed to the functions
+(and some other stuff as well).
+This is called the <em>stack</em>.
+There is one stack per thread.
+If you don't know what a thread is, don't worry for now about that, just
+know that each application uses at least one thread when it runs.
+When a function call is made, a piece of the stack is used to store the local
+variables of the function and the parameters to that function and when the function
+is finished, the memory is released.</p>
+<p>This means that after a function call is finished, the memory that was used to
+store the local variables of the function or the parameters that ware passed to
+that function, can be re-used for something completely else.
+So you cannot expect the values that were stored in that piece of memory are
+still intact. This implies that you cannot use the stack to store data that you
+need for a longer time, longer than the duration of the function call.</p>
+<p>These two pieces of memory -- static memory and the stack -- solve the
+chicken-and-egg dilemma we mentioned earlier.
+In some situations however, this is not enough.
+When you don't know how much memory you will need at compile time, you can't use
+static memory.
+And when you need to store memory for a longer time, you can't store it on
+the stack.
+If you want to use some memory for a longer time and you can only know at run
+time how much memory you will need, you can acquire a piece of memory that is
+not in static memory and not on the stack.
+We say that this is &quot;on the heap&quot;.</p>
+<p>This is just the same as with any other kind of resource we discussed before!
+Also for memory, the operating system has the role of resource manager, and it
+distributes handles (memory adresses) that can be used by the processes.
+But this is very low level stuff and it also has a large overhead because
+you need a system call to the operation system, which is relatively expensive.
+So there is a dynamic memory management library that plays an intermediate role
+between the application and the operating system. It asks the operation system
+for pieces of memory in larger chunks (typically 4kB or more) and distributes
+smaller pieces of this to the application. In this way, it avoids having to do
+a system call for each and every small piece of memory that the application
+needs.</p>
+<p>This memory management library plays the role of a resource manager.
+You can ask it to give an amount of memory and it negociates with the operating
+system for you.
+From the point of view of the application, it's still a resource manager where
+you have to acquire a piece of memory, or release a piece of memory.</p>
+<p>Memory that is obtained in this way is memory <em>on the heap</em>.
+Acquiring memory access is called <em>memory allocation</em> and releasing memory is called <em>freeing</em>.</p>
+<p>Note that a garbage collector is not the same as a dynamic memory management
+library.
+A dynamic memory management library requires you to tell explicitly
+when you don't need a specific part of memory anymore.</p>
+<a class="header" href="print.html#resources in rust" id="resources in rust"><h1>Resources in Rust</h1></a>
+<p>Rust has a uniform system for memory and other types of resources.</p>
+<a class="header" href="print.html#introduction example-1" id="introduction example-1"><h2>Introduction example</h2></a>
+<p>Let us give an example illustrating how you can write to a file in Rust,
+similar to the example in pseudo-code we gave at the very beginning.</p>
+<p>For ease of reference, we copy the example in pseudo-code here.</p>
+<pre><code>WRITE_TO_FILE()
+1   file_descriptor ← OPEN_FILE(&quot;MyDocument.txt&quot;)
+2   text_to_write ← &quot;Hello, World!&quot;
+3   WRITE_TEXT(file_descriptor, text_to_write)
+4   CLOSE_FILE(file_descriptor)
+</code></pre>
+<p>In the pseudocode example we ignored the error handling.
+In real Rust code, we cannot ignore errors that occur.
+This makes the code longer.</p>
+<pre><code class="language-rust">use std::fs::File;
+use std::io::prelude::*;
+use std::io::Error;
+
+fn write_to_file() -&gt; Result&lt;(), Error&gt;{
+    let mut file : File = File::create(&quot;MyDocument.txt&quot;)?;
+    let text_to_write = b&quot;Hello, World!&quot;;
+    File::write_all(&amp;mut file, text_to_write)?;
+    
+    return Ok(());
+}
+
+</code></pre>
+<p>The first three lines are just there so that the
+compiler needs what is meant by <code>File</code>, <code>Error</code> etc.</p>
+<p>In the first line in the function body, the program asks the operating system
+to create a file named &quot;MyDocument.txt&quot;. The resulting file descriptor is wrapped
+in a value of type <code>File</code> and stored in the variable named <code>file</code>. The question
+mark at the end of the line is for error handling and indicates that the
+function returns an error when the file cannot be created.</p>
+<p>The second line in the function body defines the data we want to write.
+The <code>b</code> before the opening double quote indicates that the string is an ASCII
+string. The only reason for this is to simplify the example.</p>
+<p>Line three of the function body can be written more shortly as follows:</p>
+<pre><code class="language-rust">    file.write_all(text_to_write)?;
+</code></pre>
+<p>Again, the question mark is for error handling.
+You can ignore the <code>&amp;mut</code> for now, you will encounter it many times later on.
+In essence, it is just as in the pseudo-code example: we pass the handle
+(the variable <code>file</code>) and the text we want to write to the a function that
+asks the operating system to do the real work.</p>
+<p>The <code>return Ok(());</code> is again for error handling and it indicates that no
+error occurred.</p>
+<a class="header" href="print.html#resources used in the example" id="resources used in the example"><h2>Resources used in the example</h2></a>
+<p>Apart from the memory that the application needs to store its CPU-instructions,
+it also needs the following resources when executing the function
+<code>write_to_file</code> described above:</p>
+<ul>
+<li>A piece of memory to store the the variable named <code>file</code>.
+Because this is a local variable, it is stored on the stack.</li>
+<li>The file name to be passed to the function <code>File::create</code>. Because this is a
+constant, it is stored in static memory.</li>
+<li>The file name needs to be passed to the function <code>File::create</code>. In fact, the
+function <code>File::create</code> does not expect the file name itself as a parameter,
+but only the memory address of the file name and the length.
+Because the file name is stored in static memory, its memory address is in
+fact a constant (TODO: this needs to be fact checked) and this constant can
+be stored as part of the CPU-instructions of the application.
+Also the length of the file-name is a constant.</li>
+<li>When the function <code>File::create</code> is called, the function <code>File::create</code> also
+needs some resources. For instance, it stores its parameters (in this
+case the memory address and the length of the filename) on the stack while
+it executes.</li>
+<li>Of course, the open file itself is also a resource used by the
+application. A handle to this file (a file descriptor) is stored in
+the variable <code>file</code>.</li>
+<li>The text that will be written to the file. This is again a constant, so it
+is stored in static memory.</li>
+<li>The function <code>File::write_all</code> expects the memory address of a
+variable of type <code>File</code>. This memory address is notated as <code>&amp;mut file</code>
+in the example. In fact, <code>&amp;</code> means &quot;take the memory address of&quot;.
+The <code>mut</code> indicates that the function <code>File::write_all</code> has exclusive
+access to this memory address while it is executed. This will be explained
+in further detail when we talk about &quot;borrowing as mutable&quot;.</li>
+<li>The function <code>File::write_all</code> also expectsthe memory address and the length
+of the data to be written. This is similar to the filename parameter of the
+function <code>File::create</code>.</li>
+<li>The caller of <code>write_to_file</code> will store the return value of
+<code>write_to_file</code>.</li>
+<li>For completeness: when the function returns, it needs to know where it has to
+return to. This information is also stored on the stack.</li>
+</ul>
+<p>TODO: explain step by step what happens when the program gets executed,
+including when the file will be closed.</p>
+<p>We can use this simple example to introduce some core concepts of the
+Rust programming language.</p>
+<p>First, because the variable <code>file</code> stores a handle that corresponds to the file
+we opened, we say that it is the <em>owner</em> of the file.
+The variable file is responsible for closing the file.
+This will happen when the variable goes out of scope.
+In general, any resource owner is responsible for releasing the resource it owns.</p>
+<p>TODO: explain <em>borrowing</em> with the example.</p>
+<p>TODO: create another example that illustrates <em>moving</em>.</p>
+<p>Ownership means having a handle that gives access to a resource.
+This can be any type of resource: a piece of memory, a file, or anything that
+your operating system might offer.
+This handle is stored in a value.
+A value is a piece of memory, but not just any piece of memory: a piece of memory
+of which you know what it is supposed to store.
+Rust is a typed language: any value has a specific data type: so that you know
+if it stores an integer, a struct, enum, utf-8 encoded string or whatever.
+This data type gives the application at compile time insight on what this value
+can be used for.
+When a value is an owner, this means that it contains a handle that gives access
+to a resource.</p>
+<p>In order to keep things easy, creating a value that acts as an owner, is the
+same acquiring the handle that gives you access to the resource.
+When this value goes out of scope -- directly , because it's a local variable
+and the function ends, or indirectly because it's stored in a piece of memory
+that is released -- then the <code>drop()</code> function is called on that specific type
+that corresponds to the value.
+This <code>drop()</code> function asks the resource manager to release the resource.
+This is part of how Rust ensures that resources cannot be used after you have
+released it.</p>
+<p>Quite often, you don't want to limit using a value to a specific part of your
+code, you want to pass it to another function etc.
+But you don't want to duplicate the handle, because then you can't know which
+copy is responsible for releasing the resource.
+For this reason, Rust disallows using the 'old' handle when it has been copied to
+somewhere else.
+Hence it's also not called &quot;copying&quot;, it is called <em>moving</em> instead.
+We say that the value that holds the handle has <em>move semantics</em>.
+This move can be done by a simple variable assignment.
+When you assing a variable to a new variable, the new variable is the owner
+of the resource.
+The old variable still holds the handle, but it cannot be used anymore: the
+compiler disallows this and the <code>drop()</code> function will not be called anymore
+when the old variable goes out of scope.
+The new variable is the owner and is responsible for releasing the resource.
+Either it transfers the ownership to yet another new owner, or it releases the
+resource when it goes out of scope.</p>
+<p>The owner of a resource stores the handle in a part of its data structure.
+The handle is enough to communicate with the resource manager.
+So the owner doesn't want this handle to be used by any other part of the
+application, because then any other part of the application might for instance
+tell the resource manager that the resource is not needed anymore.
+For this reason, the handle is stored in a part of the data structure of the
+owner that can only be accessed by code that is associated directly to the owner.
+You can think of it as being a private field.</p>
+<p>Not every value really corresponds to a resource that is manager by a resource
+manager.
+For instance, a value may hold a number that has been entered by the user,
+or a number that is a result of a calculation.
+This does not need to be required or released, so it is no problem at all if
+this value gets copied many times and each copy is used (e.g. in a calculation).
+So not all values have move semantics: you can opt-out for it and choose for
+copy semantics.
+Data types can opt out of move semantics when they do not contain any handle
+that corresponds to a resource.
+We then say that the data type has <em>copy semantics</em>.</p>
+<a class="header" href="print.html#borrowing" id="borrowing"><h2>Borrowing</h2></a>
+<p>Borrowing is really specific to memory, it's not for resources in general.
+If you borrow a value, then you store the memory address of that value in
+another value.
+A value that contains a memory address of another value is called a <em>reference</em>
+to that value.
+You can only borrow a value for as long as the borrowed value is valid.
+So if your value corresponds to a resource and has move semantics, than the
+reference to that value is only valid until that owner is either moved or goes
+out of scope.
+This is also checked at compile time.</p>
+<p>There are two kinds of references that can be used for borrowing:</p>
+<ul>
+<li>references as mutable</li>
+<li>references as immutable.</li>
+</ul>
+<p>A reference as immutable can only be used for read access to that piece of memory</p>
+<p>TODO: Needs to be restructured</p>
+<p>A reference as mutable can be used for writing as well.
+You typically want to keep track of what the state of your data is.
+If you have a reference to a piece of memory and this piece of memory changes
+behind your back, than this can break an invariant that you have in mind,
+like &quot;if this is &gt; 0, then also that is &gt;0&quot;.</p>
+<p>So for this reason, if you have any reference, then you can be sure that no-one
+else has a reference as mutable to that piece of memory.
+So if you are the owner and you can use a value, then you know that there is no
+reference to it.
+For the period of the borrowing, the original value is frozen, which means that
+you cannot do anything with it.</p>
+<a class="header" href="print.html#borrowing and ownership" id="borrowing and ownership"><h2>Borrowing and ownership</h2></a>
+<p>There is a link between ownership and borrowing:
+the thing that is borrowed, can be an owner of a resource.
+When this happens, the borrower has the memory address of the owner,
+and via this, it could access the handle, and in this way, it could then use the
+resource.
+Concerning terminology, we simply say &quot;borrower of the resource&quot; instead of
+&quot;borrower of the owner of the resource&quot;.</p>
+<p>To keep things under control, the owner of a resource needs to have control
+over what its borrowers can do.
+For this reason, the borrowers cannot access private fields of the owner.
+In particular, they cannot read or manipulate the handle that gives access to the
+resource.
+But the owner can provide methods to the borrowers to perform certain actions
+on the resource.
+For instance, if the resource is a file, then the code that is associated to
+the owner may provide functionality to read data from a file or write data
+to a file.
+It can distinguish between borrowers that borrow as immutable and borrowers
+that borrow as mutable.
+For instance, you might want a borrower that borrows as immutable to be only
+able to read from the file and to grant access to write to the file exclusively
+to borrowers that borrow as mutable.</p>
+<a class="header" href="print.html#recap" id="recap"><h2>Recap</h2></a>
+<p>Resources correspond to a capability of the hardware.
+They are managed by a resource manager that gives you the possibility to acquire
+a resource and when you don't need to use the resource anymore, then you can
+give it back.
+This handle is stored in an owner: a value.
+A value is a piece of memory that has an associated type.
+Not every value contains a handle that corresponds to a resource.
+If a piece of memory does not contain a handle, then you can opt out of move
+semantics.
+Move semantics means that you cannot make a duplicate of a variable: when you
+copy it, the original cannot be used anymore.
+Borrowing is specific for memory: you borrow a value by taking a reference to
+it. A reference is just a memory address to a value.
+This reference is only valid for as long the value can be used.
+There are two types of references:</p>
+<p>reference as immutable &amp; as mutable.
+When you have access to a value, then you can be sure that no-one else has.</p>
+<a class="header" href="print.html#annotated code example" id="annotated code example"><h2>Annotated code example</h2></a>
+<p>Phew, that was a lot of theory.
+Time to illustrate this with an example!
+Rust's file system API is a little bit too complicated to work as an introduction
+example, so let's consider a simplified version.
+Don't worry if you don't understand everything, we will explain every concept
+(related to references and borrowing) in detail further on.</p>
+<pre><code class="language-rust">mod FileSystem {
+    pub struct File {
+        file_descriptor: u64
+    }
+    // Incomplete code, to be continued.
+</code></pre>
+<p>Here we start a new module, named <code>FileSystem</code>.
+The module acts as a boundary that restricts access to data types, fields, and
+functions.</p>
+<p>In the module, we declare a new data type, named <code>File</code>.
+Remember that Rust is a typed language.
+The data type is a struct, which means &quot;something with fields&quot;.
+The <code>pub</code> keyword before <code>struct</code> indicates that
+the struct is public, which means that it can be used outside the module
+<code>FileSystem</code> in which it is defined.</p>
+<p>The struct has one field, called <code>file_descriptor</code>.
+This field will be used to hold the handle inside an <code>u64</code>.
+There is no <code>pub</code> keyword before the name of the field, so the field can
+only be accessed from within the module <code>FileSystem</code> in which it is defined.
+In other words, it's a &quot;private&quot; field.</p>
+<p>An <code>impl</code> block associates data to a given type.</p>
+<pre><code class="language-rust">    // Still in the module `FileSystem`.
+    impl File {
+        pub fn open(filepath: &amp;FilePath) -&gt; File {
+            // `ask_operating_system_for_file_descriptor` will be defined later
+            let file_descriptor 
+                = File::ask_operating_system_for_file_descriptor(filepath);
+            return File{file_descriptor: file_descriptor};
+        }
+    }
+    // Incomplete code, to be continued.
+</code></pre>
+<p>We define a function called <code>open</code> that takes a parameter called <code>filepath</code>.
+The ampersand before the type <code>FilePath</code> indicates that <code>filepath</code> is a
+reference to a value of type <code>FilePath</code> itself, rather than a value of type
+<code>FilePath</code>. (We omit the declaration of the type <code>FilePath</code>.)</p>
+<p>The function returns a value of type <code>File</code>. For simplicity, there
+is no error handling and we just let the program crash by calling
+<code>panic!</code>. Of course, the the standard library has proper error handling.</p>
+<p>The <code>pub</code> keyword before the name of the function indicates that the function
+is public, in other words, it can be called from outside the module
+<code>FileSystem</code> in which it is defined.</p>
+<p>Internally, the function calls the function
+<code>File::ask_operating_system_for_file_descriptor</code>, which we will define below.</p>
+<p>The statement <code>return File{file_descriptor: file_descriptor};</code>
+then constructs a value of type <code>File</code> by specifying all its fields and
+returns this.
+Note that because the field <code>file_descriptor</code> is only accessible from within
+the module, this way of constructing a value of type <code>File</code> is only available
+within the <code>FileSystem</code> module.</p>
+<pre><code class="language-rust">        // Still in the `impl` block.
+        fn ask_operating_system_for_file_descriptor(filepath: &amp;FilePath) -&gt; u64{
+            unsafe {
+                // the internals of a type that communicates with a resource
+                // manager are typically unsafe.
+                // We ommit it here.
+            }
+        }
+        // Incomplete code, to be continued.
+</code></pre>
+<p>Usually, you don't have to communicate with a resource manager directly, you
+use a function from the standard library to do the communication for you.
+It's usually interfacing with an external API, I have left it out because it's
+not the focus of this document.</p>
+<p>Note that the function <code>ask_operating_system_for_file_descriptor</code> is not marked
+<code>pub</code>, so it can only be called from within the module.
+In the function <code>open</code>, we already saw how it can be called.
+Note the syntaxis <code>File::ask_operating_system_for_file_descriptor</code>.
+Because the function <code>ask_operating_system_for_file_descriptor</code> is defined in
+the <code>impl</code> block of the type <code>File</code>, you have to specify the type, even when the function
+does not have a parameter of type <code>File</code> or return a value of type <code>File</code>.
+The function could also be defined as a stand-alone function outside of the
+<code>impl</code> block, this would not make a difference.</p>
+<pre><code class="language-rust">        // Still in the `impl` block.
+        pub fn read_byte(&amp;self, index: usize) -&gt; u8 {
+            unsafe {
+                // Yep, more unsafe stuff, which I omit.
+            }
+        }
+</code></pre>
+<p>The <code>&amp;self</code> parameter is special.
+It means that the first parameter, with name <code>self</code> is of type <code>&amp;File</code> (because
+we are in the <code>impl File</code> block).
+Type <code>&amp;File</code> means an immutable reference to a value of type <code>File</code>.
+This implies that any borrower that borrows a value of type <code>File</code> as immutable
+has access to read bytes from the file.
+It also allows a special syntaxis: if <code>file</code> is a variable of type <code>File</code> or of type
+<code>&amp;File</code> or of type <code>&amp;mut File</code>, then you can write <code>file.read_byte(3)</code> to
+read the third byte from the file.</p>
+<p>To simplify the matter, we assume that we will simply crash the current thread
+when we have no access to read from the file, when we try to read past the
+end of the file etc.
+Of course, the real Rust API handles errors in a better way.</p>
+<p>Because the field <code>file_descriptor</code> is not accessible from outside the
+<code>FileSystem</code> module, this is the only way a user of the code can read bytes
+from the file.</p>
+<pre><code class="language-rust">        // Still in the `impl` block.
+        pub fn file_size_in_bytes(&amp;self) -&gt; usize {
+            unsafe {
+                // Also ommitted.
+            }
+        }
+        // Incomplete code, to be continued.
+</code></pre>
+<p>This function is similar to the <code>read_byte</code> function.
+It also takes an <code>&amp;self</code> parameter, which allows it to be used by any value
+that borrows the value of type <code>File</code> as immutable.</p>
+<pre><code class="language-rust">        // Still in the `impl block.
+        pub fn write_byte(&amp;mut self, index: usize, byte_to_write: u8) {
+            unsafe {
+                // Ommitted.
+            }
+        }
+    } // Close the impl block. Incomplete code, to be continued.
+</code></pre>
+<p>This function takes an <code>&amp;mut self</code> parameter.
+It indicates that this function is restricted to references as mutable only.
+Refferences as immutable cannot be passed to this function (because they have
+a different data type).
+In this way, access to write a byte to a file is restricted to references as mutable.
+So you can only write to a file if you borrow it as mutable, not as immutable.</p>
+<p>It is very important to not use a resource after it has been released.
+Rust automatically inserts calls to release a resource.
+This is done by calling the <code>drop</code> function from the <code>Drop</code> trait.
+Let's see how the file <code>File</code> ensures that the file is closed properly.</p>
+<pre><code class="language-rust">    // Still in the `FileSystem` module
+    impl Drop for File {
+        fn drop(&amp;mut self) {
+            unsafe {
+                // Again, this is unsafe code.
+            }
+        }
+    }
+} // End of the `FileSystem` module.
+</code></pre>
+<p>Here we see the syntaxis <code>impl Drop for File</code> is used to indicate that the
+<code>File</code> struct implements the <code>Drop</code> trait.
+The implementation can be found in the block immediately below.
+The <code>Drop</code> trait defines only one function, called <code>drop</code> that takes one
+<code>&amp;mut self</code> parameter.
+The implementation is again typically unsafe code that does communication
+with an external API offered by the operating system.
+What happens here is that the operating system is instructed to close the
+file with the <code>file_descriptor</code> that was required during the initialisation.</p>
+<p>Let us now see how the <code>File</code> struct can be used in practice.
+We assume that the file struct is used outside of the <code>FileSystem</code> module.
+Let us write a completely inappropriate method to copy data from one file to
+another.
+Let us first write the scaffolding of opening the files, calling another
+function to copy the data, and closing the files.</p>
+<pre><code class="language-rust">// Outside the FileSystem module.
+
+fn copy_file(source_filepath: &amp;FilePath, destination_filepath: &amp;FilePath) {
+    let source_file = File::open(source_filepath);
+    let mut destination_file = File::open(destination_filepath);
+    copy_data(&amp;source_file, &amp;mut destination_file);
+}
+
+// To be continued...
+</code></pre>
+<p>On the first line of the function, we open the source file.
+The value is immutable by default.
+Note the <code>File::open(...)</code> syntaxis for calling a method associated to a type.
+On the second line, we open the destination file.
+This value is defined as mutable.
+The third line is very interesting.
+Here we call the <code>copy_data</code> function (that is still to be written).
+This function borrows the <code>source_file</code> as immutable and it borrows the
+<code>destination_file</code> value as mutable (that's what the <code>mut</code> after the <code>&amp;</code> indicates).
+Note that we do not write <code>drop(...)</code>, the compiler automatically inserts this
+call for us.</p>
+<p>Maybe it's time to let this sink a little, because this illustrates the foundation of
+Rusts resource management.</p>
+<p>Ok, on to the function that copies data.
+As we already noted, this function borrows <code>source_file</code> as immutable and
+<code>destination_file</code> as mutable.</p>
+<pre><code class="language-rust">// Still outside the FileSystem module.
+
+fn copy_data(source: &amp;File, destination: &amp;mut File) {
+    let length = source.file_size_in_bytes();
+    for index in 0 .. length {
+        let byte = source.read_byte(index);
+        destination.write_byte(index, byte);
+    }
+}
+</code></pre>
+<p>The signature clarifies that <code>source</code> is borrowed as immutable from somewhere
+and <code>destination</code> is borrowed as mutable.
+When calling the <code>file_size_in_bytes</code> function, we use a syntaxis we didn't use
+before.
+An equivalent, but not as beautifull syntaxis would be
+<code>let length = File::file_size_in_bytes(source);</code>.
+Instead of passing the <code>&amp;self</code> parameter explicitely,
+we use the dot-operator to call the function as is common in object-oriented languages.</p>
+<p>Next comes a for-loop, where we loop over the indexes of all bytes in the source
+file.</p>
+<p>In the for-loop, we first read a byte from the <code>source</code>.
+Again, note the syntaxis for this.
+Then we write it to the destination.</p>
+<p>Then we write the byte we have just read to the <code>destination</code> file.
+Remember that the <code>File::write_byte</code> expects an <code>&amp;mut self</code> parameter.
+Here, <code>destination</code> is passed implicitely as the <code>&amp;mut self</code> parameter, so it
+must have type <code>&amp;mut File</code>. This is why the function <code>copy_data</code> expects the
+parameter <code>destination</code> to be of type <code>&amp;mut File</code>.</p>
+
+                </div>
+
+                <!-- Mobile navigation buttons -->
+                
+
+                
+
+            </div>
+
+            
+
+            
+
+        </div>
+
+
+        <!-- Local fallback for Font Awesome -->
+        <script>
+            if ($(".fa").css("font-family") !== "FontAwesome") {
+                $('<link rel="stylesheet" type="text/css" href="_FontAwesome/css/font-awesome.css">').prependTo('head');
+            }
+        </script>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        
+
+        
+
+        
+
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+    </body>
+</html>

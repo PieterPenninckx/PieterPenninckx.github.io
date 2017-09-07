@@ -1,0 +1,352 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Resources in general - Resource management in Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Resource management in the Rust programming language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+        <link rel="stylesheet" href="book.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <link rel="shortcut icon" href="favicon.png">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme -->
+        
+
+        
+
+        <!-- Fetch Clipboard.js from CDN but have a local fallback -->
+        <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+        <script>
+            if (typeof Clipboard == 'undefined') {
+                document.write(unescape("%3Cscript src='clipboard.min.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch JQuery from CDN but have a local fallback -->
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined') {
+                document.write(unescape("%3Cscript src='jquery.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch store.js from local - TODO add CDN when 2.x.x is available on cdnjs -->
+        <script src="store.js"></script>
+
+        <!-- Custom JS script -->
+        
+
+    </head>
+    <body class="light">
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme = store.get('theme');
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            $('body').removeClass().addClass(theme);
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var sidebar = store.get('sidebar');
+            if (sidebar === "hidden") { $("html").addClass("sidebar-hidden") }
+            else if (sidebar === "visible") { $("html").addClass("sidebar-visible") }
+        </script>
+
+        <div id="sidebar" class="sidebar">
+            <ul class="chapter"><li><a href="./resources-in-general.html" class="active"><strong>1.</strong> Resources in general</a></li><li><a href="./resources-in-rust.html"><strong>2.</strong> Resources in Rust</a></li></ul>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page" tabindex="-1">
+                <div id="menu-bar" class="menu-bar">
+                    <div class="left-buttons">
+                        <i id="sidebar-toggle" class="fa fa-bars"></i>
+                        <i id="theme-toggle" class="fa fa-paint-brush"></i>
+                    </div>
+
+                    <h1 class="menu-title">Resource management in Rust</h1>
+
+                    <div class="right-buttons">
+                        <i id="print-button" class="fa fa-print" title="Print this book"></i>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <a class="header" href="resources-in-general.html#resources in general" id="resources in general"><h1>Resources in general</h1></a>
+<p>We start with a simple specific example in pseudo-code.
+Then we give some general theory and we conclude with a more extended example
+in Rust.</p>
+<a class="header" href="resources-in-general.html#a simple example" id="a simple example"><h2>A simple example</h2></a>
+<p>Consider the following pseudo-code.</p>
+<pre><code>WRITE_TO_FILE()
+1   file_descriptor ← OPEN_FILE(&quot;MyDocument.txt&quot;)
+2   text_to_write ← &quot;Hello, World!&quot;
+3   WRITE_TEXT(file_descriptor, text_to_write)
+4   CLOSE_FILE(file_descriptor)
+</code></pre>
+<p>On line 1, we call the function <code>OPEN_FILE</code> with as parameter the
+name of the file we want to open.
+This function <code>OPEN_FILE</code>, wich we do not give pseudo-code for,
+communicates to the operating system and asks to open the file with the given
+file name.
+For simplicity, we omit error handling in this example.</p>
+<p>In general, an application can open more than one file.
+So if the application asks the operating system to write to a file, the
+operating system has to know: &quot;which file are you referring to?&quot;.
+For this reason, the function <code>OPEN_FILE</code> returns an identifier
+that will be used later on in the communication with the operating system to
+specify which file the application is talking about.
+In the case of a file, this identifier is called a <em>file descriptor</em>.
+It is usually a number (an integer).
+In most libraries, the file descriptor is wrapped in another data
+type that represents the file.
+In our example, we just assume that we get the bare file descriptor.</p>
+<p>Line 2 is nothing special: we just store the text we want to write in a variable.</p>
+<p>On line 3, we call the function <code>WRITE_TEXT</code> to write this text to the file.
+The function <code>WRITE_TEXT</code> asks the operating system to write the given text
+to a file.
+The first parameter, for which we pass the variable <code>file_descriptor</code> is used
+to specify to which file the text should be written.</p>
+<p>On line 4, we call the function <code>CLOSE_FILE</code> to close the file.
+Again, we pass the variable <code>file_descriptor</code> to specify which file must be
+closed.</p>
+<p>Excercise. In the previous example, the programmer can make a bug for instance
+by forgetting to close the file. There are many mistakes like that.
+Write down a number of them. We will come back to this later on.</p>
+<a class="header" href="resources-in-general.html#theory" id="theory"><h2>Theory</h2></a>
+<p>In the introduction example, we have seen a simple program that communicates
+to the operating system to write some text to a file.</p>
+<p>The file is a specific example of the more broad concept of a <em>resource</em>.
+Other examples of resources include</p>
+<ul>
+<li>a network socket</li>
+<li>a connection to a server</li>
+<li>a block of memory</li>
+<li>access to the screen, soundcard, printer or any other device</li>
+<li>a mutual exclusive lock.</li>
+</ul>
+<p>Some resources correspond to physical devices, other correspond to virtual
+concepts (such as the mutual exclusive lock).</p>
+<p>Resources are managed by a resource manager, usually the operation system.
+The resource manager distributes handles that give access to this resource.
+In the introduction example for instance, the handle was a file descriptor.</p>
+<p>When a process wants to access a resource, it asks the resource manager for a
+handle that gives access to the resource.
+In the introduction example, the function <code>OPEN_FILE</code> asked the operating system
+(the resource manager) for a file descriptor (the handle) that gives acces to
+the file (the resource).
+The resource manager may refuse access, or open the resource on behalf
+of the process and hand over the handle to the process.
+If the resource was opened successfully, the application stores the handle in
+memory, to be used later on in the communication with the resource manager.</p>
+<p>When the process has finished using the resource, it communicates to the resource
+manager that the resource can be released: &quot;Hey, I don't need this resource anymore&quot;.
+In the introduction example, this was the call to the <code>CLOSE_FILE</code> function.
+After that point, the process should not use the handle anymore.
+When the resource manager is informed that a resource is not needed anymore,
+it can either close the resource, or it knows that
+the resource can be re-used by another process that wants to use the resource again.</p>
+<p>In general, using a resource looks as follows:</p>
+<pre><code>USE_RESOURCE()
+1   handle ← OPEN_RESOURCE(parameters)
+2   USE_RESOURCE(handle)
+3   RELEASE_RESOURCE(handle)
+</code></pre>
+<a class="header" href="resources-in-general.html#memory as a resource" id="memory as a resource"><h1>Memory as a resource</h1></a>
+<p>Memory is a resource just like any other, but in all programming
+languages that I know, it is handled differently.</p>
+<p>One, quite obvious, difference is that in many programming languages, memory
+does not have to be released explicitly because a garbage collector takes care
+of that. Although Rust does not rely heavily on garbage collectors, I will spend
+some time explaining garbage collectors.</p>
+<p>A second difference is more subtle and we will discuss it later on.</p>
+<p>But first, let us start with some examples of how memory is used in programming
+languages you are probably more familiar with.</p>
+<a class="header" href="resources-in-general.html#introduction example" id="introduction example"><h2>Introduction example</h2></a>
+<p>Let us give one example in different programming languages: creating an
+array or a vector or something similar of numbers, and storing the sum of
+the numbers in the first element of the vector.</p>
+<p>This is how this looks like in Python:</p>
+<pre><code class="language-python">def compute_sum():
+    numbers = [1, 2, 3]
+    numbers[0] = numbers[0] + numbers[1] + numbers[2]
+</code></pre>
+<p>In Java or C#:</p>
+<pre><code class="language-java">void ComputeSum() {
+    int[] numbers = {1, 2, 3};
+    numbers[0] = numbers[0] + numbers[1] + numbers[2];
+}
+</code></pre>
+<p>In Javascript:</p>
+<pre><code class="language-javascript">function ComputeSum() {
+    var numbers = [1, 2, 3];
+    numbers[0] = numbers[0] + numbers[1] + numbers[2];
+}
+</code></pre>
+<p>If you more familiar with a programming language for which no example was
+given, you can probably write down this simple function yourself.</p>
+<p>On the first line in the function body, an array is created, containing the
+numbers one, two and three.
+When any of the examples above is is executed, under the hood, a part
+of memory is reserved to store the numbers. The variable <code>numbers</code> contains
+somehow a handle for the piece of memory that was reserved.</p>
+<p>On the second line, the handle stored in <code>numbers</code> is used multiple times to
+compute a simple sum and store it in the first element of the array.</p>
+<p>If the general approach to using a resource was used, then there would be a
+third line on which the resource manager was informed that we don't need the
+memory for the array anymore. There is no line of code like that.</p>
+<p>If memory was like any other resource in these programming languages, then you
+would get in trouble when this function was called many, many times. Each and
+every time, the function would reserve yet another piece of memory to store
+its array. After a while, there would be no unused memory left and your
+program would crash. In practice, there is a piece of your application that
+prevents this from happening: the garbage collector.</p>
+<a class="header" href="resources-in-general.html#garbage collectors" id="garbage collectors"><h2>Garbage collectors</h2></a>
+<p>In the previous section, we illustrated that in many programming
+languages, the user does not have to explicitely indicate that a piece of
+memory is no longer needed. But if the application were to only reserve more
+and more memory, it would soon run out of memory. So ultimately, somehow the
+application has to indicate that some pieces of memory are not used anymore and
+may be re-used for something else.</p>
+<p>This is the task of the garbage collector.
+The garbage collector is a piece of software designed only for this goal
+and it runs together with your application.
+In order to know which pieces of
+memory may be released, the garbage collector analyses the state of the program
+as it runs.</p>
+<p>There are many techniques for garbage collecting.
+One technique, called 'reference counting' can be implemented relatively easy
+and requires only a little help from the programming language.
+Other techniques require extensive support from the programming languages.</p>
+<p>Most recent programming languages, including Python, Javascript, Java, C# and Go
+offer extensive support for garbage collecting. In these languages, you
+typically rely on the garbage collector for nearly everything you do.</p>
+<p>C++, Rust and Swift have enough features to implement reference counting,
+but do not offer any support for garbage collection beyond that.
+For this reason, it is often said that these languages do not have garbage
+collection, although technically speaking, that statement is not correct.</p>
+<p>Reference counting is only one technique to manage memory in Rust, however, and
+it is even not used that often. Depending on the type of software you are
+writing, you can write a complete program and then realize that you never used
+reference counting.</p>
+<a class="header" href="resources-in-general.html#not all memory needs to be acquired" id="not all memory needs to be acquired"><h2>Not all memory needs to be acquired</h2></a>
+<p>Memory as a resource is a special case, because the handle that gives access
+to the resource is stored in memory as well.
+So if you want to use memory, then you need to get a handle that gives access to the memory.
+You then need to store this handle in memory, and for this, you have to acquire memory.
+Eum... this is a &quot;the chicken or the egg&quot; dilemma!</p>
+<p>This dilemma is solved by giving the application a dedicated piece of
+memory that can be used without needing to acquire or release it.
+In fact, each application gets at least two dedicated pieces of memory without
+needing to acquire or release it.</p>
+<p>First there is a piece of memory that can be used by the application for data
+that has a fixed size and lives essentially as long as the application runs.
+It is typically used for constants (e.g. if you want to store the number π,
+or string constants). This is called <em>static memory</em>.
+You can do complicated stuff with static memory, but for simplicity, let us
+assume that you will only want to store constants in static memory.</p>
+<p>Secondly, there is a piece of memory that is used to store the local variables
+of the functions and the parameters that are passed to the functions
+(and some other stuff as well).
+This is called the <em>stack</em>.
+There is one stack per thread.
+If you don't know what a thread is, don't worry for now about that, just
+know that each application uses at least one thread when it runs.
+When a function call is made, a piece of the stack is used to store the local
+variables of the function and the parameters to that function and when the function
+is finished, the memory is released.</p>
+<p>This means that after a function call is finished, the memory that was used to
+store the local variables of the function or the parameters that ware passed to
+that function, can be re-used for something completely else.
+So you cannot expect the values that were stored in that piece of memory are
+still intact. This implies that you cannot use the stack to store data that you
+need for a longer time, longer than the duration of the function call.</p>
+<p>These two pieces of memory -- static memory and the stack -- solve the
+chicken-and-egg dilemma we mentioned earlier.
+In some situations however, this is not enough.
+When you don't know how much memory you will need at compile time, you can't use
+static memory.
+And when you need to store memory for a longer time, you can't store it on
+the stack.
+If you want to use some memory for a longer time and you can only know at run
+time how much memory you will need, you can acquire a piece of memory that is
+not in static memory and not on the stack.
+We say that this is &quot;on the heap&quot;.</p>
+<p>This is just the same as with any other kind of resource we discussed before!
+Also for memory, the operating system has the role of resource manager, and it
+distributes handles (memory adresses) that can be used by the processes.
+But this is very low level stuff and it also has a large overhead because
+you need a system call to the operation system, which is relatively expensive.
+So there is a dynamic memory management library that plays an intermediate role
+between the application and the operating system. It asks the operation system
+for pieces of memory in larger chunks (typically 4kB or more) and distributes
+smaller pieces of this to the application. In this way, it avoids having to do
+a system call for each and every small piece of memory that the application
+needs.</p>
+<p>This memory management library plays the role of a resource manager.
+You can ask it to give an amount of memory and it negociates with the operating
+system for you.
+From the point of view of the application, it's still a resource manager where
+you have to acquire a piece of memory, or release a piece of memory.</p>
+<p>Memory that is obtained in this way is memory <em>on the heap</em>.
+Acquiring memory access is called <em>memory allocation</em> and releasing memory is called <em>freeing</em>.</p>
+<p>Note that a garbage collector is not the same as a dynamic memory management
+library.
+A dynamic memory management library requires you to tell explicitly
+when you don't need a specific part of memory anymore.</p>
+
+                </div>
+
+                <!-- Mobile navigation buttons -->
+                
+
+                
+                    <a rel="next" href="./resources-in-rust.html" class="mobile-nav-chapters next">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+
+            </div>
+
+            
+
+            
+                <a href="./resources-in-rust.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            
+
+        </div>
+
+
+        <!-- Local fallback for Font Awesome -->
+        <script>
+            if ($(".fa").css("font-family") !== "FontAwesome") {
+                $('<link rel="stylesheet" type="text/css" href="_FontAwesome/css/font-awesome.css">').prependTo('head');
+            }
+        </script>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        
+
+        
+
+        
+
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+    </body>
+</html>
