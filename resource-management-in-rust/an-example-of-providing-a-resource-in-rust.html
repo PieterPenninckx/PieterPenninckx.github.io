@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Resources in Rust - Resource management in Rust</title>
+        <title>An example of providing a resource in Rust - Resource management in Rust</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Resource management in the Rust programming language.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -66,7 +66,7 @@
         </script>
 
         <div id="sidebar" class="sidebar">
-            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><a href="./resources-in-rust.html" class="active"><strong>2.</strong> Resources in Rust</a></li></ul>
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html" class="active"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
         </div>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -86,142 +86,7 @@
                 </div>
 
                 <div id="content" class="content">
-                    <a class="header" href="resources-in-rust.html#resources in rust" id="resources in rust"><h1>Resources in Rust</h1></a>
-<p>Rust has a uniform system for memory and other types of resources.</p>
-<a class="header" href="resources-in-rust.html#introduction example" id="introduction example"><h2>Introduction example</h2></a>
-<p>Let us give an example illustrating how you can write to a file in Rust,
-similar to the example in pseudo-code we gave at the very beginning.</p>
-<p>For ease of reference, we copy the example in pseudo-code here.</p>
-<pre><code>WRITE_TO_FILE()
-1   file_descriptor ← OPEN_FILE(&quot;MyDocument.txt&quot;)
-2   text_to_write ← &quot;Hello, World!&quot;
-3   WRITE_TEXT(file_descriptor, text_to_write)
-4   CLOSE_FILE(file_descriptor)
-</code></pre>
-<p>In the pseudocode example we ignored the error handling.
-In real Rust code, we cannot ignore errors that occur.
-This makes the code longer.</p>
-<pre><code class="language-rust">use std::fs::File;
-use std::io::prelude::*;
-use std::io::Error;
-
-fn write_to_file() -&gt; Result&lt;(), Error&gt;{
-    let mut file : File = File::create(&quot;MyDocument.txt&quot;)?;
-    let text_to_write = b&quot;Hello, World!&quot;;
-    File::write_all(&amp;mut file, text_to_write)?;
-    
-    return Ok(());
-}
-
-</code></pre>
-<p>The first three lines are just there so that the
-compiler needs what is meant by <code>File</code>, <code>Error</code> etc.</p>
-<p>In the first line in the function body, the program asks the operating system
-to create a file named &quot;MyDocument.txt&quot;. The resulting file descriptor is wrapped
-in a value of type <code>File</code> and stored in the variable named <code>file</code>. The question
-mark at the end of the line is for error handling and indicates that the
-function returns an error when the file cannot be created.</p>
-<p>The second line in the function body defines the data we want to write.
-The <code>b</code> before the opening double quote indicates that the string is an ASCII
-string. The only reason for this is to simplify the example.</p>
-<p>Line three of the function body can be written more shortly as follows:</p>
-<pre><code class="language-rust">    file.write_all(text_to_write)?;
-</code></pre>
-<p>Again, the question mark is for error handling.
-You can ignore the <code>&amp;mut</code> for now, you will encounter it many times later on.
-In essence, it is just as in the pseudo-code example: we pass the handle
-(the variable <code>file</code>) and the text we want to write to the a function that
-asks the operating system to do the real work.</p>
-<p>The <code>return Ok(());</code> is again for error handling and it indicates that no
-error occurred.</p>
-<a class="header" href="resources-in-rust.html#resources used in the example" id="resources used in the example"><h2>Resources used in the example</h2></a>
-<p>Apart from the memory that the application needs to store its CPU-instructions,
-it also needs the following resources when executing the function
-<code>write_to_file</code> described above:</p>
-<ul>
-<li>A piece of memory to store the the variable named <code>file</code>.
-Because this is a local variable, it is stored on the stack.</li>
-<li>The file name to be passed to the function <code>File::create</code>. Because this is a
-constant, it is stored in static memory.</li>
-<li>The file name needs to be passed to the function <code>File::create</code>. In fact, the
-function <code>File::create</code> does not expect the file name itself as a parameter,
-but only the memory address of the file name and the length.
-Because the file name is stored in static memory, its memory address is in
-fact a constant (TODO: this needs to be fact checked) and this constant can
-be stored as part of the CPU-instructions of the application.
-Also the length of the file-name is a constant.</li>
-<li>When the function <code>File::create</code> is called, the function <code>File::create</code> also
-needs some resources. For instance, it stores its parameters (in this
-case the memory address and the length of the filename) on the stack while
-it executes.</li>
-<li>Of course, the open file itself is also a resource used by the
-application. A handle to this file (a file descriptor) is stored in
-the variable <code>file</code>.</li>
-<li>The text that will be written to the file. This is again a constant, so it
-is stored in static memory.</li>
-<li>The function <code>File::write_all</code> expects the memory address of a
-variable of type <code>File</code>. This memory address is notated as <code>&amp;mut file</code>
-in the example. In fact, <code>&amp;</code> means &quot;take the memory address of&quot;.
-The <code>mut</code> indicates that the function <code>File::write_all</code> has exclusive
-access to this memory address while it is executed. This will be explained
-in further detail when we talk about &quot;borrowing as mutable&quot;.</li>
-<li>The function <code>File::write_all</code> also expectsthe memory address and the length
-of the data to be written. This is similar to the filename parameter of the
-function <code>File::create</code>.</li>
-<li>The caller of <code>write_to_file</code> will store the return value of
-<code>write_to_file</code>.</li>
-<li>For completeness: when the function returns, it needs to know where it has to
-return to. This information is also stored on the stack.</li>
-</ul>
-<p>TODO: explain step by step what happens when the program gets executed,
-including when the file will be closed.</p>
-<p>We can use this simple example to introduce some core concepts of the
-Rust programming language.</p>
-<p>First, because the variable <code>file</code> stores a handle that corresponds to the file
-we opened, we say that it is the <em>owner</em> of the file.
-The variable file is responsible for closing the file.
-This will happen when the variable goes out of scope.
-In general, any resource owner is responsible for releasing the resource it owns.</p>
-<p>TODO: explain <em>borrowing</em> with the example.</p>
-<p>TODO: create another example that illustrates <em>moving</em>.</p>
-<p>Ownership means having a handle that gives access to a resource.
-This can be any type of resource: a piece of memory, a file, or anything that
-your operating system might offer.
-This handle is stored in a value.
-A value is a piece of memory, but not just any piece of memory: a piece of memory
-of which you know what it is supposed to store.
-Rust is a typed language: any value has a specific data type: so that you know
-if it stores an integer, a struct, enum, utf-8 encoded string or whatever.
-This data type gives the application at compile time insight on what this value
-can be used for.
-When a value is an owner, this means that it contains a handle that gives access
-to a resource.</p>
-<p>In order to keep things easy, creating a value that acts as an owner, is the
-same acquiring the handle that gives you access to the resource.
-When this value goes out of scope -- directly , because it's a local variable
-and the function ends, or indirectly because it's stored in a piece of memory
-that is released -- then the <code>drop()</code> function is called on that specific type
-that corresponds to the value.
-This <code>drop()</code> function asks the resource manager to release the resource.
-This is part of how Rust ensures that resources cannot be used after you have
-released it.</p>
-<p>Quite often, you don't want to limit using a value to a specific part of your
-code, you want to pass it to another function etc.
-But you don't want to duplicate the handle, because then you can't know which
-copy is responsible for releasing the resource.
-For this reason, Rust disallows using the 'old' handle when it has been copied to
-somewhere else.
-Hence it's also not called &quot;copying&quot;, it is called <em>moving</em> instead.
-We say that the value that holds the handle has <em>move semantics</em>.
-This move can be done by a simple variable assignment.
-When you assing a variable to a new variable, the new variable is the owner
-of the resource.
-The old variable still holds the handle, but it cannot be used anymore: the
-compiler disallows this and the <code>drop()</code> function will not be called anymore
-when the old variable goes out of scope.
-The new variable is the owner and is responsible for releasing the resource.
-Either it transfers the ownership to yet another new owner, or it releases the
-resource when it goes out of scope.</p>
+                    <a class="header" href="./an-example-of-providing-a-resource-in-rust.html#an-example-of-providing-a-resource-in-rust" id="an-example-of-providing-a-resource-in-rust"><h1>An example of providing a resource in Rust</h1></a>
 <p>The owner of a resource stores the handle in a part of its data structure.
 The handle is enough to communicate with the resource manager.
 So the owner doesn't want this handle to be used by any other part of the
@@ -230,88 +95,8 @@ tell the resource manager that the resource is not needed anymore.
 For this reason, the handle is stored in a part of the data structure of the
 owner that can only be accessed by code that is associated directly to the owner.
 You can think of it as being a private field.</p>
-<p>Not every value really corresponds to a resource that is manager by a resource
-manager.
-For instance, a value may hold a number that has been entered by the user,
-or a number that is a result of a calculation.
-This does not need to be required or released, so it is no problem at all if
-this value gets copied many times and each copy is used (e.g. in a calculation).
-So not all values have move semantics: you can opt-out for it and choose for
-copy semantics.
-Data types can opt out of move semantics when they do not contain any handle
-that corresponds to a resource.
-We then say that the data type has <em>copy semantics</em>.</p>
-<a class="header" href="resources-in-rust.html#borrowing" id="borrowing"><h2>Borrowing</h2></a>
-<p>Borrowing is really specific to memory, it's not for resources in general.
-If you borrow a value, then you store the memory address of that value in
-another value.
-A value that contains a memory address of another value is called a <em>reference</em>
-to that value.
-You can only borrow a value for as long as the borrowed value is valid.
-So if your value corresponds to a resource and has move semantics, than the
-reference to that value is only valid until that owner is either moved or goes
-out of scope.
-This is also checked at compile time.</p>
-<p>There are two kinds of references that can be used for borrowing:</p>
-<ul>
-<li>references as mutable</li>
-<li>references as immutable.</li>
-</ul>
-<p>A reference as immutable can only be used for read access to that piece of memory</p>
-<p>TODO: Needs to be restructured</p>
-<p>A reference as mutable can be used for writing as well.
-You typically want to keep track of what the state of your data is.
-If you have a reference to a piece of memory and this piece of memory changes
-behind your back, than this can break an invariant that you have in mind,
-like &quot;if this is &gt; 0, then also that is &gt;0&quot;.</p>
-<p>So for this reason, if you have any reference, then you can be sure that no-one
-else has a reference as mutable to that piece of memory.
-So if you are the owner and you can use a value, then you know that there is no
-reference to it.
-For the period of the borrowing, the original value is frozen, which means that
-you cannot do anything with it.</p>
-<a class="header" href="resources-in-rust.html#borrowing and ownership" id="borrowing and ownership"><h2>Borrowing and ownership</h2></a>
-<p>There is a link between ownership and borrowing:
-the thing that is borrowed, can be an owner of a resource.
-When this happens, the borrower has the memory address of the owner,
-and via this, it could access the handle, and in this way, it could then use the
-resource.
-Concerning terminology, we simply say &quot;borrower of the resource&quot; instead of
-&quot;borrower of the owner of the resource&quot;.</p>
-<p>To keep things under control, the owner of a resource needs to have control
-over what its borrowers can do.
-For this reason, the borrowers cannot access private fields of the owner.
-In particular, they cannot read or manipulate the handle that gives access to the
-resource.
-But the owner can provide methods to the borrowers to perform certain actions
-on the resource.
-For instance, if the resource is a file, then the code that is associated to
-the owner may provide functionality to read data from a file or write data
-to a file.
-It can distinguish between borrowers that borrow as immutable and borrowers
-that borrow as mutable.
-For instance, you might want a borrower that borrows as immutable to be only
-able to read from the file and to grant access to write to the file exclusively
-to borrowers that borrow as mutable.</p>
-<a class="header" href="resources-in-rust.html#recap" id="recap"><h2>Recap</h2></a>
-<p>Resources correspond to a capability of the hardware.
-They are managed by a resource manager that gives you the possibility to acquire
-a resource and when you don't need to use the resource anymore, then you can
-give it back.
-This handle is stored in an owner: a value.
-A value is a piece of memory that has an associated type.
-Not every value contains a handle that corresponds to a resource.
-If a piece of memory does not contain a handle, then you can opt out of move
-semantics.
-Move semantics means that you cannot make a duplicate of a variable: when you
-copy it, the original cannot be used anymore.
-Borrowing is specific for memory: you borrow a value by taking a reference to
-it. A reference is just a memory address to a value.
-This reference is only valid for as long the value can be used.
-There are two types of references:</p>
-<p>reference as immutable &amp; as mutable.
-When you have access to a value, then you can be sure that no-one else has.</p>
-<a class="header" href="resources-in-rust.html#annotated code example" id="annotated code example"><h2>Annotated code example</h2></a>
+<a class="header" href="./an-example-of-providing-a-resource-in-rust.html#annotated-code-example" id="annotated-code-example"><h2>Annotated code example</h2></a>
+<p>TODO: Find a better example than files.</p>
 <p>Phew, that was a lot of theory.
 Time to illustrate this with an example!
 Rust's file system API is a little bit too complicated to work as an introduction
@@ -527,21 +312,29 @@ parameter <code>destination</code> to be of type <code>&amp;mut File</code>.</p>
 
                 <!-- Mobile navigation buttons -->
                 
-                    <a rel="prev" href="./resources-in-general.html" class="mobile-nav-chapters previous">
+                    <a rel="prev" href="./moving-in-short.html" class="mobile-nav-chapters previous">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
+                    <a rel="next" href="./intro-recap.html" class="mobile-nav-chapters next">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
 
             </div>
 
             
-                <a href="./resources-in-general.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
+                <a href="./moving-in-short.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
                     <i class="fa fa-angle-left"></i>
                 </a>
             
 
+            
+                <a href="./intro-recap.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-right"></i>
+                </a>
             
 
         </div>

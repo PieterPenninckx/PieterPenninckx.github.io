@@ -1,0 +1,179 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Resources used in the example - Resource management in Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Resource management in the Rust programming language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <base href="">
+
+        <link rel="stylesheet" href="book.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <link rel="shortcut icon" href="favicon.png">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme -->
+        
+
+        
+
+        <!-- Fetch Clipboard.js from CDN but have a local fallback -->
+        <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+        <script>
+            if (typeof Clipboard == 'undefined') {
+                document.write(unescape("%3Cscript src='clipboard.min.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch JQuery from CDN but have a local fallback -->
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined') {
+                document.write(unescape("%3Cscript src='jquery.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch store.js from local - TODO add CDN when 2.x.x is available on cdnjs -->
+        <script src="store.js"></script>
+
+        <!-- Custom JS script -->
+        
+
+    </head>
+    <body class="light">
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme = store.get('theme');
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            $('body').removeClass().addClass(theme);
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var sidebar = store.get('sidebar');
+            if (sidebar === "hidden") { $("html").addClass("sidebar-hidden") }
+            else if (sidebar === "visible") { $("html").addClass("sidebar-visible") }
+        </script>
+
+        <div id="sidebar" class="sidebar">
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html" class="active"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page" tabindex="-1">
+                <div id="menu-bar" class="menu-bar">
+                    <div class="left-buttons">
+                        <i id="sidebar-toggle" class="fa fa-bars"></i>
+                        <i id="theme-toggle" class="fa fa-paint-brush"></i>
+                    </div>
+
+                    <h1 class="menu-title">Resource management in Rust</h1>
+
+                    <div class="right-buttons">
+                        <i id="print-button" class="fa fa-print" title="Print this book"></i>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <a class="header" href="./resources-used-in-the-example.html#resources-used-in-the-example" id="resources-used-in-the-example"><h2>Resources used in the example</h2></a>
+<p>TODO: I think it is clearer if we step trough the example instead.</p>
+<p>Apart from the memory that the application needs to store its CPU-instructions,
+it also needs the following resources when executing the function
+<code>write_to_file</code> described above:</p>
+<ul>
+<li>A piece of memory to store the the variable named <code>file</code>.
+Because this is a local variable, it is stored on the stack.</li>
+<li>The file name to be passed to the function <code>File::create</code>. Because this is a
+constant, it is stored in static memory.</li>
+<li>The file name needs to be passed to the function <code>File::create</code>. In fact, the
+function <code>File::create</code> does not expect the file name itself as a parameter,
+but only the memory address of the file name and the length.
+Because the file name is stored in static memory, its memory address is in
+fact a constant (TODO: this needs to be fact checked) and this constant can
+be stored as part of the CPU-instructions of the application.
+Also the length of the file-name is a constant.</li>
+<li>When the function <code>File::create</code> is called, the function <code>File::create</code> also
+needs some resources. For instance, it stores its parameters (in this
+case the memory address and the length of the filename) on the stack while
+it executes.</li>
+<li>Of course, the open file itself is also a resource used by the
+application. A handle to this file (a file descriptor) is stored in
+the variable <code>file</code>.</li>
+<li>The text that will be written to the file. This is again a constant, so it
+is stored in static memory.</li>
+<li>The function <code>File::write_all</code> expects the memory address of a
+variable of type <code>File</code>. This memory address is notated as <code>&amp;mut file</code>
+in the example. In fact, <code>&amp;</code> means &quot;take the memory address of&quot;.
+The <code>mut</code> indicates that the function <code>File::write_all</code> has exclusive
+access to this memory address while it is executed. This will be explained
+in further detail when we talk about &quot;borrowing as mutable&quot;.</li>
+<li>The function <code>File::write_all</code> also expectsthe memory address and the length
+of the data to be written. This is similar to the filename parameter of the
+function <code>File::create</code>.</li>
+<li>The caller of <code>write_to_file</code> will store the return value of
+<code>write_to_file</code>.</li>
+<li>For completeness: when the function returns, it needs to know where it has to
+return to. This information is also stored on the stack.</li>
+</ul>
+
+                </div>
+
+                <!-- Mobile navigation buttons -->
+                
+                    <a rel="prev" href="./an-example-of-using-a-resource-in-rust.html" class="mobile-nav-chapters previous">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a rel="next" href="./stepping-trough-the-example.html" class="mobile-nav-chapters next">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+
+            </div>
+
+            
+                <a href="./an-example-of-using-a-resource-in-rust.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            
+
+            
+                <a href="./stepping-trough-the-example.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            
+
+        </div>
+
+
+        <!-- Local fallback for Font Awesome -->
+        <script>
+            if ($(".fa").css("font-family") !== "FontAwesome") {
+                $('<link rel="stylesheet" type="text/css" href="_FontAwesome/css/font-awesome.css">').prependTo('head');
+            }
+        </script>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        
+
+        
+
+        
+
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+    </body>
+</html>

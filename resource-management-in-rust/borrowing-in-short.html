@@ -1,0 +1,191 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Borrowing is having access - Resource management in Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Resource management in the Rust programming language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <base href="">
+
+        <link rel="stylesheet" href="book.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <link rel="shortcut icon" href="favicon.png">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme -->
+        
+
+        
+
+        <!-- Fetch Clipboard.js from CDN but have a local fallback -->
+        <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+        <script>
+            if (typeof Clipboard == 'undefined') {
+                document.write(unescape("%3Cscript src='clipboard.min.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch JQuery from CDN but have a local fallback -->
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined') {
+                document.write(unescape("%3Cscript src='jquery.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch store.js from local - TODO add CDN when 2.x.x is available on cdnjs -->
+        <script src="store.js"></script>
+
+        <!-- Custom JS script -->
+        
+
+    </head>
+    <body class="light">
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme = store.get('theme');
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            $('body').removeClass().addClass(theme);
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var sidebar = store.get('sidebar');
+            if (sidebar === "hidden") { $("html").addClass("sidebar-hidden") }
+            else if (sidebar === "visible") { $("html").addClass("sidebar-visible") }
+        </script>
+
+        <div id="sidebar" class="sidebar">
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html" class="active"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page" tabindex="-1">
+                <div id="menu-bar" class="menu-bar">
+                    <div class="left-buttons">
+                        <i id="sidebar-toggle" class="fa fa-bars"></i>
+                        <i id="theme-toggle" class="fa fa-paint-brush"></i>
+                    </div>
+
+                    <h1 class="menu-title">Resource management in Rust</h1>
+
+                    <div class="right-buttons">
+                        <i id="print-button" class="fa fa-print" title="Print this book"></i>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <a class="header" href="./borrowing-in-short.html#borrowing-is-having-access" id="borrowing-is-having-access"><h2>Borrowing is having access</h2></a>
+<p>If you borrow a value, then you store the memory address of that value in
+another value.
+A value that contains a memory address of another value is called a <em>reference</em>
+to that value.
+You can only borrow a value for as long as the borrowed value is valid.
+So if your value corresponds to a resource and has move semantics, than the
+reference to that value is only valid until that owner is either moved or goes
+out of scope.
+This is also checked at compile time.</p>
+<p>There are two kinds of references that can be used for borrowing:</p>
+<ul>
+<li>references as mutable</li>
+<li>references as immutable.</li>
+</ul>
+<p>A reference as immutable can only be used for read access to that piece of memory</p>
+<p>A reference as mutable can be used for writing as well.
+You typically want to keep track of what the state of your data is.
+If you have a reference to a piece of memory and this piece of memory changes
+behind your back, than this can break an invariant that you have in mind,
+like &quot;if this is &gt; 0, then also that is &gt;0&quot;.</p>
+<p>So for this reason, if you have any reference, then you can be sure that no-one
+else has a reference as mutable to that piece of memory.
+So if you are the owner and you can use a value, then you know that there is no
+reference to it.
+For the period of the borrowing, the original value is frozen, which means that
+you cannot do anything with it.</p>
+<p>TODO: Explain &quot;locked&quot; (values are locked when they are borrowed as mutable,
+which means that they cannot be read from).</p>
+<a class="header" href="./borrowing-in-short.html#borrowing-and-ownership" id="borrowing-and-ownership"><h3>Borrowing and ownership</h3></a>
+<p>There is a link between ownership and borrowing:
+the thing that is borrowed, can be an owner of a resource.
+When this happens, the borrower has the memory address of the owner,
+and via this, it could access the handle, and in this way, it could then use the
+resource.
+Concerning terminology, we simply say &quot;borrower of the resource&quot; instead of
+&quot;borrower of the owner of the resource&quot;.</p>
+<p>To keep things under control, the owner of a resource needs to have control
+over what its borrowers can do.
+For this reason, the borrowers cannot access private fields of the owner.
+In particular, they cannot read or manipulate the handle that gives access to the
+resource.
+But the owner can provide methods to the borrowers to perform certain actions
+on the resource.
+For instance, if the resource is a file, then the code that is associated to
+the owner may provide functionality to read data from a file or write data
+to a file.
+It can distinguish between borrowers that borrow as immutable and borrowers
+that borrow as mutable.
+For instance, you might want a borrower that borrows as immutable to be only
+able to read from the file and to grant access to write to the file exclusively
+to borrowers that borrow as mutable.</p>
+
+                </div>
+
+                <!-- Mobile navigation buttons -->
+                
+                    <a rel="prev" href="./ownership-in-short.html" class="mobile-nav-chapters previous">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a rel="next" href="./moving-in-short.html" class="mobile-nav-chapters next">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+
+            </div>
+
+            
+                <a href="./ownership-in-short.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            
+
+            
+                <a href="./moving-in-short.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            
+
+        </div>
+
+
+        <!-- Local fallback for Font Awesome -->
+        <script>
+            if ($(".fa").css("font-family") !== "FontAwesome") {
+                $('<link rel="stylesheet" type="text/css" href="_FontAwesome/css/font-awesome.css">').prependTo('head');
+            }
+        </script>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        
+
+        
+
+        
+
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+    </body>
+</html>

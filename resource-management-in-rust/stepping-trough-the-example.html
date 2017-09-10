@@ -2,11 +2,12 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Resources in general - Resource management in Rust</title>
+        <title>Stepping through the example - Resource management in Rust</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Resource management in the Rust programming language.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        <base href="">
 
         <link rel="stylesheet" href="book.css">
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
@@ -65,7 +66,7 @@
         </script>
 
         <div id="sidebar" class="sidebar">
-            <ul class="chapter"><li><a href="./resources-in-general.html" class="active"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html" class="active"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
         </div>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -85,18 +86,20 @@
                 </div>
 
                 <div id="content" class="content">
-                    <a class="header" href="./resources-in-general.html#resources-in-general" id="resources-in-general"><h1>Resources in general</h1></a>
-<p>We start with a simple specific example in pseudo-code.
-Then we give some general theory and we conclude with a more extended example
-in Rust.</p>
+                    <a class="header" href="./stepping-trough-the-example.html#stepping-through-the-example" id="stepping-through-the-example"><h2>Stepping through the example</h2></a>
+<p>TODO: write this part.</p>
 
                 </div>
 
                 <!-- Mobile navigation buttons -->
                 
+                    <a rel="prev" href="./resources-used-in-the-example.html" class="mobile-nav-chapters previous">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
 
                 
-                    <a rel="next" href="./resources-in-general-example.html" class="mobile-nav-chapters next">
+                    <a rel="next" href="./core-concepts-illustrated.html" class="mobile-nav-chapters next">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
@@ -104,9 +107,13 @@ in Rust.</p>
             </div>
 
             
+                <a href="./resources-used-in-the-example.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            
 
             
-                <a href="./resources-in-general-example.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                <a href="./core-concepts-illustrated.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
                     <i class="fa fa-angle-right"></i>
                 </a>
             

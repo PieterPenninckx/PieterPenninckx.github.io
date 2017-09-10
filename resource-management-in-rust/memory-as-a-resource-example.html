@@ -1,0 +1,178 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Example - Resource management in Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Resource management in the Rust programming language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <base href="">
+
+        <link rel="stylesheet" href="book.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <link rel="shortcut icon" href="favicon.png">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme -->
+        
+
+        
+
+        <!-- Fetch Clipboard.js from CDN but have a local fallback -->
+        <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+        <script>
+            if (typeof Clipboard == 'undefined') {
+                document.write(unescape("%3Cscript src='clipboard.min.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch JQuery from CDN but have a local fallback -->
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined') {
+                document.write(unescape("%3Cscript src='jquery.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch store.js from local - TODO add CDN when 2.x.x is available on cdnjs -->
+        <script src="store.js"></script>
+
+        <!-- Custom JS script -->
+        
+
+    </head>
+    <body class="light">
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme = store.get('theme');
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            $('body').removeClass().addClass(theme);
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var sidebar = store.get('sidebar');
+            if (sidebar === "hidden") { $("html").addClass("sidebar-hidden") }
+            else if (sidebar === "visible") { $("html").addClass("sidebar-visible") }
+        </script>
+
+        <div id="sidebar" class="sidebar">
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html" class="active"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page" tabindex="-1">
+                <div id="menu-bar" class="menu-bar">
+                    <div class="left-buttons">
+                        <i id="sidebar-toggle" class="fa fa-bars"></i>
+                        <i id="theme-toggle" class="fa fa-paint-brush"></i>
+                    </div>
+
+                    <h1 class="menu-title">Resource management in Rust</h1>
+
+                    <div class="right-buttons">
+                        <i id="print-button" class="fa fa-print" title="Print this book"></i>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <a class="header" href="./memory-as-a-resource-example.html#introduction-example" id="introduction-example"><h2>Introduction example</h2></a>
+<p>Let us give one example in different programming languages: creating an
+array or a vector or something similar of numbers, and storing the sum of
+the numbers in the first element of the vector.</p>
+<p>This is how this looks like in Python:</p>
+<pre><code class="language-python">def compute_sum():
+    numbers = [1, 2, 3]
+    numbers[0] = numbers[0] + numbers[1] + numbers[2]
+</code></pre>
+<p>In Java or C#:</p>
+<pre><code class="language-java">void ComputeSum() {
+    int[] numbers = {1, 2, 3};
+    numbers[0] = numbers[0] + numbers[1] + numbers[2];
+}
+</code></pre>
+<p>In Javascript:</p>
+<pre><code class="language-javascript">function ComputeSum() {
+    var numbers = [1, 2, 3];
+    numbers[0] = numbers[0] + numbers[1] + numbers[2];
+}
+</code></pre>
+<p>If you more familiar with a programming language for which no example was
+given, you can probably write down this simple function yourself.</p>
+<p>On the first line in the function body, an array is created, containing the
+numbers one, two and three.
+When any of the examples above is is executed, under the hood, a part
+of memory is reserved to store the numbers. The variable <code>numbers</code> contains
+somehow a handle for the piece of memory that was reserved.</p>
+<p>On the second line, the handle stored in <code>numbers</code> is used multiple times to
+compute a simple sum and store it in the first element of the array.</p>
+<p>If the general approach to using a resource was used, then there would be a
+third line on which the resource manager was informed that we don't need the
+memory for the array anymore. There is no line of code like that.</p>
+<p>If memory was like any other resource in these programming languages, then you
+would get in trouble when this function was called many, many times. Each and
+every time, the function would reserve yet another piece of memory to store
+its array. After a while, there would be no unused memory left and your
+program would crash. In practice, there is a piece of your application that
+prevents this from happening: the garbage collector.</p>
+
+                </div>
+
+                <!-- Mobile navigation buttons -->
+                
+                    <a rel="prev" href="./memory-as-a-resource.html" class="mobile-nav-chapters previous">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a rel="next" href="./garbage-collectors.html" class="mobile-nav-chapters next">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+
+            </div>
+
+            
+                <a href="./memory-as-a-resource.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            
+
+            
+                <a href="./garbage-collectors.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            
+
+        </div>
+
+
+        <!-- Local fallback for Font Awesome -->
+        <script>
+            if ($(".fa").css("font-family") !== "FontAwesome") {
+                $('<link rel="stylesheet" type="text/css" href="_FontAwesome/css/font-awesome.css">').prependTo('head');
+            }
+        </script>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        
+
+        
+
+        
+
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+    </body>
+</html>
