@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Resource management in Rust</title>
+        <title> - Resource management in Rust</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Resource management in the Rust programming language.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -66,7 +66,7 @@
         </script>
 
         <div id="sidebar" class="sidebar">
-            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-summary.html"><strong>6.</strong> Summary</a></li></ul>
         </div>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -86,32 +86,31 @@
                 </div>
 
                 <div id="content" class="content">
-                    <a class="header" href="print.html#resources-in-general" id="resources-in-general"><h1>Resources in general</h1></a>
-<p>We start with a simple specific example in pseudo-code.
+                    <a class="header" href="print.html#resources in general" id="resources in general"><h1>Resources in general</h1></a>
+<p>We start with a simple example in pseudo-code.
 Then we give some general theory and we conclude with a more extended example
 in Rust.</p>
-<a class="header" href="print.html#a-simple-example" id="a-simple-example"><h2>A simple example</h2></a>
-<p>Consider the following pseudo-code.</p>
+<a class="header" href="print.html#a simple example" id="a simple example"><h2>A simple example</h2></a>
+<p>For simplicity, we omit error handling in this example.
+Consider the following pseudo-code.</p>
 <pre><code>WRITE_TO_FILE()
 1   file_descriptor ← OPEN_FILE(&quot;MyDocument.txt&quot;)
 2   text_to_write ← &quot;Hello, World!&quot;
 3   WRITE_TEXT(file_descriptor, text_to_write)
 4   CLOSE_FILE(file_descriptor)
 </code></pre>
-<p>On line 1, we call the function <code>OPEN_FILE</code> with as parameter the
+<p>On line 1, we call the function <code>OPEN_FILE</code> and we pass as parameter the
 name of the file we want to open.
 This function <code>OPEN_FILE</code>, wich we do not give pseudo-code for,
-communicates to the operating system and asks to open the file with the given
-file name.
-For simplicity, we omit error handling in this example.</p>
+communicates with the operating system and asks to open the file with the given
+file name.</p>
 <p>In general, an application can open more than one file.
 So if the application asks the operating system to write to a file, the
-operating system has to know: &quot;which file are you referring to?&quot;.
-For this reason, the function <code>OPEN_FILE</code> returns an identifier
+operating system has to know: &quot;Which file are you referring to?&quot;.
+For this reason, the function <code>OPEN_FILE</code> returns a number
 that will be used later on in the communication with the operating system to
 specify which file the application is talking about.
-In the case of a file, this identifier is called a <em>file descriptor</em>.
-It is usually a number (an integer).
+In the case of a file, the number is called a <em>file descriptor</em>.
 In most libraries, the file descriptor is wrapped in another data
 type that represents the file.
 In our example, we just assume that we get the bare file descriptor.</p>
@@ -119,24 +118,24 @@ In our example, we just assume that we get the bare file descriptor.</p>
 <p>On line 3, we call the function <code>WRITE_TEXT</code> to write this text to the file.
 The function <code>WRITE_TEXT</code> asks the operating system to write the given text
 to a file.
-The first parameter, for which we pass the variable <code>file_descriptor</code> is used
-to specify to which file the text should be written.</p>
+The first parameter, for which we pass the variable <code>file_descriptor</code>
+specifies to which file the text should be written.</p>
 <p>On line 4, we call the function <code>CLOSE_FILE</code> to close the file.
 Again, we pass the variable <code>file_descriptor</code> to specify which file must be
 closed.</p>
 <p>Excercise. In the previous example, the programmer can make a bug for instance
 by forgetting to close the file. There are many mistakes like that.
 Write down a number of them. We will come back to this later on.</p>
-<a class="header" href="print.html#what-is-a-resource" id="what-is-a-resource"><h2>What is a resource</h2></a>
-<p>In the introduction example, we have seen a simple program that communicates
-to the operating system to write some text to a file.</p>
+<a class="header" href="print.html#what is a resource" id="what is a resource"><h2>What is a resource</h2></a>
+<p>In the introduction example, we have seen a simple program that
+writes some text to a file.</p>
 <p>The file is a specific example of the more broad concept of a <em>resource</em>.
 Other examples of resources include</p>
 <ul>
-<li>a network socket</li>
-<li>a connection to a server</li>
-<li>a block of memory</li>
-<li>access to the screen, soundcard, printer or any other device</li>
+<li>a network socket,</li>
+<li>a connection to a server,</li>
+<li>a block of memory,</li>
+<li>access to the screen, soundcard, printer or any other device,</li>
 <li>a mutual exclusive lock.</li>
 </ul>
 <p>Some resources correspond to physical devices, other correspond to virtual
@@ -166,32 +165,34 @@ the resource can be re-used by another process that wants to use the resource ag
 2   USE_RESOURCE(handle)
 3   RELEASE_RESOURCE(handle)
 </code></pre>
-<a class="header" href="print.html#memory-as-a-resource" id="memory-as-a-resource"><h1>Memory as a resource</h1></a>
+<a class="header" href="print.html#memory as a resource" id="memory as a resource"><h1>Memory as a resource</h1></a>
 <p>Memory is a resource just like any other, but in all programming
 languages that I know, it is handled differently.</p>
-<p>One, quite obvious, difference is that in many programming languages, memory
+<p>One, quite obvious, difference in many programming languages is that memory
 does not have to be released explicitly because a garbage collector takes care
 of that. Although Rust does not rely heavily on garbage collectors, I will spend
-some time explaining garbage collectors.</p>
-<p>A second difference is more subtle and we will discuss it later on.</p>
-<p>But first, let us start with some examples of how memory is used in programming
-languages you are probably more familiar with.</p>
-<a class="header" href="print.html#introduction-example" id="introduction-example"><h2>Introduction example</h2></a>
-<p>Let us give one example in different programming languages: creating an
+some time explaining <a href="./garbage-collectors.md">garbage collectors</a>.</p>
+<p>A second difference is more subtle and we will discuss it later on
+(see section
+'<a href="./not-all-memory-needs-to-be-acquired.md">Not all memory needs to be acquired</a>').</p>
+<p>But first, let us start with some examples of how memory is used in some of
+today's most common programming languages.</p>
+<a class="header" href="print.html#introduction example" id="introduction example"><h2>Introduction example</h2></a>
+<p>Let us give an example in different programming languages: creating an
 array or a vector or something similar of numbers, and storing the sum of
 the numbers in the first element of the vector.</p>
-<p>This is how this looks like in Python:</p>
+<p>This is how it looks like in Python</p>
 <pre><code class="language-python">def compute_sum():
     numbers = [1, 2, 3]
     numbers[0] = numbers[0] + numbers[1] + numbers[2]
 </code></pre>
-<p>In Java or C#:</p>
+<p>in Java or C#</p>
 <pre><code class="language-java">void ComputeSum() {
     int[] numbers = {1, 2, 3};
     numbers[0] = numbers[0] + numbers[1] + numbers[2];
 }
 </code></pre>
-<p>In Javascript:</p>
+<p>and in Javascript</p>
 <pre><code class="language-javascript">function ComputeSum() {
     var numbers = [1, 2, 3];
     numbers[0] = numbers[0] + numbers[1] + numbers[2];
@@ -201,11 +202,12 @@ the numbers in the first element of the vector.</p>
 given, you can probably write down this simple function yourself.</p>
 <p>On the first line in the function body, an array is created, containing the
 numbers one, two and three.
-When any of the examples above is is executed, under the hood, a part
+When any of the examples above is executed, under the hood, a part
 of memory is reserved to store the numbers. The variable <code>numbers</code> contains
-somehow a handle for the piece of memory that was reserved.</p>
+somehow a handle to the piece of memory that was reserved.</p>
 <p>On the second line, the handle stored in <code>numbers</code> is used multiple times to
-compute a simple sum and store it in the first element of the array.</p>
+get different elements of the array.
+The sum is computed and stored it in the first element of the array.</p>
 <p>If the general approach to using a resource was used, then there would be a
 third line on which the resource manager was informed that we don't need the
 memory for the array anymore. There is no line of code like that.</p>
@@ -215,44 +217,45 @@ every time, the function would reserve yet another piece of memory to store
 its array. After a while, there would be no unused memory left and your
 program would crash. In practice, there is a piece of your application that
 prevents this from happening: the garbage collector.</p>
-<a class="header" href="print.html#garbage-collectors" id="garbage-collectors"><h2>Garbage collectors</h2></a>
+<a class="header" href="print.html#garbage collectors" id="garbage collectors"><h2>Garbage collectors</h2></a>
 <p>In the previous section, we illustrated that in many programming
-languages, the user does not have to explicitely indicate that a piece of
-memory is no longer needed. But if the application were to only reserve more
+languages, the programmer does not have to explicitely write instructions to
+release memory is no longer needed.
+But if the application were to only reserve more
 and more memory, it would soon run out of memory. So ultimately, somehow the
-application has to indicate that some pieces of memory are not used anymore and
+application has to know that some pieces of memory are not used anymore and
 may be re-used for something else.</p>
 <p>This is the task of the garbage collector.
-The garbage collector is a piece of software designed only for this goal
-and it runs together with your application.
-In order to know which pieces of
-memory may be released, the garbage collector analyses the state of the program
-as it runs.</p>
+The garbage collector is a piece of software that
+runs together with your application.
+It analyses the state of the running program, looking for pieces of memory
+that can no longer be used.
+It then releases these pieces of memory.</p>
 <p>There are many techniques for garbage collecting.
-One technique, called 'reference counting' can be implemented relatively easy
+One technique, called 'reference counting', can be implemented relatively easily
 and requires only a little help from the programming language.
-Other techniques require extensive support from the programming languages.</p>
-<p>Most recent programming languages, including Python, Javascript, Java, C# and Go
-offer extensive support for garbage collecting. In these languages, you
-typically rely on the garbage collector for nearly everything you do.</p>
+Other techniques require extensive support from the programming language.</p>
+<p>Most recent programming languages, including Python, Javascript, Java, C# and
+Go, offer extensive support for garbage collecting. In these languages, you
+typically rely on the garbage collector for nearly everything you do, as is
+illustrated in the previous section.</p>
 <p>C++, Rust and Swift have enough features to implement reference counting,
 but do not offer any support for garbage collection beyond that.
 For this reason, it is often said that these languages do not have garbage
 collection, although technically speaking, that statement is not correct.</p>
-<p>Reference counting is only one technique to manage memory in Rust, however, and
-it is even not used that often. Depending on the type of software you are
-writing, you can write a complete program and then realize that you never used
-reference counting.</p>
-<a class="header" href="print.html#not-all-memory-needs-to-be-acquired" id="not-all-memory-needs-to-be-acquired"><h2>Not all memory needs to be acquired</h2></a>
+<p>Reference counting is not the most important technique to manage memory in Rust,
+however, and it is typically not used all the time.
+Depending on the type of software you are writing, you can even write a complete
+program and then realize that you never used reference counting.</p>
+<a class="header" href="print.html#not all memory needs to be acquired" id="not all memory needs to be acquired"><h2>Not all memory needs to be acquired</h2></a>
 <p>Memory as a resource is a special case, because the handle that gives access
 to the resource is stored in memory as well.
 So if you want to use memory, then you need to get a handle that gives access to the memory.
 You then need to store this handle in memory, and for this, you have to acquire memory.
 Eum... this is a &quot;the chicken or the egg&quot; dilemma!</p>
-<p>This dilemma is solved by giving the application a dedicated piece of
-memory that can be used without needing to acquire or release it.
-In fact, each application gets at least two dedicated pieces of memory without
-needing to acquire or release it.</p>
+<p>This dilemma is solved by giving each application a dedicated piece of
+memory that can be used without acquiring or releasing it.
+In fact, each application gets at least two dedicated pieces of memory.</p>
 <p>First there is a piece of memory that can be used by the application for data
 that has a fixed size and lives essentially as long as the application runs.
 It is typically used for constants (e.g. if you want to store the number π,
@@ -264,11 +267,11 @@ of the functions and the parameters that are passed to the functions
 (and some other stuff as well).
 This is called the <em>stack</em>.
 There is one stack per thread.
-If you don't know what a thread is, don't worry for now about that, just
+If you don't know what a thread is, don't worry about that for now, just
 know that each application uses at least one thread when it runs.
 When a function call is made, a piece of the stack is used to store the local
 variables of the function and the parameters to that function and when the function
-is finished, the memory is released.</p>
+is finished, this piece of memory is released.</p>
 <p>This means that after a function call is finished, the memory that was used to
 store the local variables of the function or the parameters that ware passed to
 that function, can be re-used for something completely else.
@@ -279,7 +282,7 @@ need for a longer time, longer than the duration of the function call.</p>
 chicken-and-egg dilemma we mentioned earlier.
 In some situations however, this is not enough.
 When you don't know how much memory you will need at compile time, you can't use
-static memory.
+static memory (in general).
 And when you need to store memory for a longer time, you can't store it on
 the stack.
 If you want to use some memory for a longer time and you can only know at run
@@ -287,6 +290,9 @@ time how much memory you will need, you can acquire a piece of memory that is
 not in static memory and not on the stack.
 We say that this is &quot;on the heap&quot;.</p>
 <p>This is just the same as with any other kind of resource we discussed before!
+Memory on the heap has to be acquired explicitely and must be resude after use,
+either as a consequence of an explicit instruction in the program, or because
+the garbage collector takes care of that.
 Also for memory, the operating system has the role of resource manager, and it
 distributes handles (memory adresses) that can be used by the processes.
 But this is very low level stuff and it also has a large overhead because
@@ -301,25 +307,24 @@ needs.</p>
 You can ask it to give an amount of memory and it negociates with the operating
 system for you.
 From the point of view of the application, it's still a resource manager where
-you have to acquire a piece of memory, or release a piece of memory.</p>
-<p>Memory that is obtained in this way is memory <em>on the heap</em>.
-Acquiring memory access is called <em>memory allocation</em> and releasing memory is called <em>freeing</em>.</p>
+you have to acquire a piece of memory and release it after use.</p>
 <p>Note that a garbage collector is not the same as a dynamic memory management
 library.
 A dynamic memory management library requires you to tell explicitly
 when you don't need a specific part of memory anymore.</p>
-<a class="header" href="print.html#an-example-of-using-a-resource-in-rust" id="an-example-of-using-a-resource-in-rust"><h2>An example of using a resource in Rust</h2></a>
+<p>Acquiring memory access is called <em>memory allocation</em> and releasing memory is called <em>freeing</em>.</p>
+<a class="header" href="print.html#an example of using a resource in rust" id="an example of using a resource in rust"><h2>An example of using a resource in Rust</h2></a>
 <p>Let us give an example illustrating how you can write to a file in Rust,
 similar to the example in pseudo-code we gave at the very beginning.</p>
-<p>For ease of reference, we copy the example in pseudo-code here.</p>
+<p>For ease of reference, we repeat the introduction example here:</p>
 <pre><code>WRITE_TO_FILE()
 1   file_descriptor ← OPEN_FILE(&quot;MyDocument.txt&quot;)
 2   text_to_write ← &quot;Hello, World!&quot;
 3   WRITE_TEXT(file_descriptor, text_to_write)
 4   CLOSE_FILE(file_descriptor)
 </code></pre>
-<p>In the pseudocode example we ignored the error handling.
-In real Rust code, we cannot ignore errors that occur.
+<p>In the pseudo-code example we ignored the error handling.
+In real Rust code, we cannot ignore errors.
 For this reason, the equivalent in Rust is a bit longer.</p>
 <pre><code class="language-rust">use std::fs::File;
 use std::io::prelude::*;
@@ -336,7 +341,7 @@ fn write_to_file() -&gt; Result&lt;(), Error&gt;{
 </code></pre>
 <p>The first three lines are just there so that the
 compiler needs what is meant by <code>File</code>, <code>Error</code> etc.</p>
-<p>In the first line in the function body, the program asks the operating system
+<p>In the first line of the function body, the program asks the operating system
 to create a file named &quot;MyDocument.txt&quot;. The resulting file descriptor is wrapped
 in a value of type <code>File</code> and stored in the variable named <code>file</code>. The question
 mark at the end of the line is for error handling and indicates that the
@@ -354,7 +359,7 @@ In essence, it is just as in the pseudo-code example: we pass the handle
 asks the operating system to do the real work.</p>
 <p>The <code>return Ok(());</code> is again for error handling and it indicates that no
 error occurred.</p>
-<a class="header" href="print.html#resources-used-in-the-example" id="resources-used-in-the-example"><h2>Resources used in the example</h2></a>
+<a class="header" href="print.html#resources used in the example" id="resources used in the example"><h2>Resources used in the example</h2></a>
 <p>TODO: I think it is clearer if we step trough the example instead.</p>
 <p>Apart from the memory that the application needs to store its CPU-instructions,
 it also needs the following resources when executing the function
@@ -394,9 +399,9 @@ function <code>File::create</code>.</li>
 <li>For completeness: when the function returns, it needs to know where it has to
 return to. This information is also stored on the stack.</li>
 </ul>
-<a class="header" href="print.html#stepping-through-the-example" id="stepping-through-the-example"><h2>Stepping through the example</h2></a>
+<a class="header" href="print.html#stepping through the example" id="stepping through the example"><h2>Stepping through the example</h2></a>
 <p>TODO: write this part.</p>
-<a class="header" href="print.html#some-core-concepts-illustrated" id="some-core-concepts-illustrated"><h2>Some core concepts illustrated</h2></a>
+<a class="header" href="print.html#some core concepts illustrated" id="some core concepts illustrated"><h2>Some core concepts illustrated</h2></a>
 <p>We can use this simple example to introduce some core concepts of the
 Rust programming language.</p>
 <p>First, because the variable <code>file</code> stores a handle that corresponds to the file
@@ -406,9 +411,9 @@ This will happen when the variable goes out of scope.
 In general, any resource owner is responsible for releasing the resource it owns.</p>
 <p>TODO: explain <em>borrowing</em> with the example.</p>
 <p>TODO: create another example that illustrates <em>moving</em>.</p>
-<a class="header" href="print.html#core-concepts" id="core-concepts"><h1>Core concepts</h1></a>
+<a class="header" href="print.html#core concepts" id="core concepts"><h1>Core concepts</h1></a>
 <p>TODO: Write an introduction here.</p>
-<a class="header" href="print.html#ownership-is-the-responsibility-to-release-the-resource" id="ownership-is-the-responsibility-to-release-the-resource"><h2>Ownership is the responsibility to release the resource</h2></a>
+<a class="header" href="print.html#ownership is the responsibility to release the resource" id="ownership is the responsibility to release the resource"><h2>Ownership is the responsibility to release the resource</h2></a>
 <p>Ownership means having a handle that gives access to a resource.
 This can be any type of resource: a piece of memory, a file, or anything that
 your operating system might offer.
@@ -430,7 +435,7 @@ that corresponds to the value.
 This <code>drop()</code> function asks the resource manager to release the resource.
 This is part of how Rust ensures that resources cannot be used after you have
 released it.</p>
-<a class="header" href="print.html#borrowing-is-having-access" id="borrowing-is-having-access"><h2>Borrowing is having access</h2></a>
+<a class="header" href="print.html#borrowing is having access" id="borrowing is having access"><h2>Borrowing is having access</h2></a>
 <p>If you borrow a value, then you store the memory address of that value in
 another value.
 A value that contains a memory address of another value is called a <em>reference</em>
@@ -459,7 +464,7 @@ For the period of the borrowing, the original value is frozen, which means that
 you cannot do anything with it.</p>
 <p>TODO: Explain &quot;locked&quot; (values are locked when they are borrowed as mutable,
 which means that they cannot be read from).</p>
-<a class="header" href="print.html#borrowing-and-ownership" id="borrowing-and-ownership"><h3>Borrowing and ownership</h3></a>
+<a class="header" href="print.html#borrowing and ownership" id="borrowing and ownership"><h3>Borrowing and ownership</h3></a>
 <p>There is a link between ownership and borrowing:
 the thing that is borrowed, can be an owner of a resource.
 When this happens, the borrower has the memory address of the owner,
@@ -482,7 +487,7 @@ that borrow as mutable.
 For instance, you might want a borrower that borrows as immutable to be only
 able to read from the file and to grant access to write to the file exclusively
 to borrowers that borrow as mutable.</p>
-<a class="header" href="print.html#moving-is-transfer-of-ownership" id="moving-is-transfer-of-ownership"><h2>Moving is transfer of ownership</h2></a>
+<a class="header" href="print.html#moving is transfer of ownership" id="moving is transfer of ownership"><h2>Moving is transfer of ownership</h2></a>
 <p>Quite often, you don't want to limit using a value to a specific part of your
 code, you want to pass it to another function etc.
 But you don't want to duplicate the handle, because then you can't know which
@@ -500,7 +505,7 @@ when the old variable goes out of scope.
 The new variable is the owner and is responsible for releasing the resource.
 Either it transfers the ownership to yet another new owner, or it releases the
 resource when it goes out of scope.</p>
-<a class="header" href="print.html#not-all-memory-owns-a-resource" id="not-all-memory-owns-a-resource"><h3>Not all memory owns a resource</h3></a>
+<a class="header" href="print.html#not all memory owns a resource" id="not all memory owns a resource"><h3>Not all memory owns a resource</h3></a>
 <p>Not every value really corresponds to a resource that is manager by a resource
 manager.
 For instance, a value may hold a number that has been entered by the user,
@@ -512,7 +517,7 @@ copy semantics.
 Data types can opt out of move semantics when they do not contain any handle
 that corresponds to a resource.
 We then say that the data type has <em>copy semantics</em>.</p>
-<a class="header" href="print.html#an-example-of-providing-a-resource-in-rust" id="an-example-of-providing-a-resource-in-rust"><h1>An example of providing a resource in Rust</h1></a>
+<a class="header" href="print.html#an example of providing a resource in rust" id="an example of providing a resource in rust"><h1>An example of providing a resource in Rust</h1></a>
 <p>The owner of a resource stores the handle in a part of its data structure.
 The handle is enough to communicate with the resource manager.
 So the owner doesn't want this handle to be used by any other part of the
@@ -521,7 +526,7 @@ tell the resource manager that the resource is not needed anymore.
 For this reason, the handle is stored in a part of the data structure of the
 owner that can only be accessed by code that is associated directly to the owner.
 You can think of it as being a private field.</p>
-<a class="header" href="print.html#annotated-code-example" id="annotated-code-example"><h2>Annotated code example</h2></a>
+<a class="header" href="print.html#annotated code example" id="annotated code example"><h2>Annotated code example</h2></a>
 <p>TODO: Find a better example than files.</p>
 <p>Phew, that was a lot of theory.
 Time to illustrate this with an example!
@@ -733,9 +738,8 @@ Remember that the <code>File::write_byte</code> expects an <code>&amp;mut self</
 Here, <code>destination</code> is passed implicitely as the <code>&amp;mut self</code> parameter, so it
 must have type <code>&amp;mut File</code>. This is why the function <code>copy_data</code> expects the
 parameter <code>destination</code> to be of type <code>&amp;mut File</code>.</p>
-<a class="header" href="print.html#recap" id="recap"><h1>Recap</h1></a>
-<p>Resources correspond to a capability of the hardware.
-(TODO: The previous sentence is not correct.)
+<a class="header" href="print.html#summary" id="summary"><h1>Summary</h1></a>
+<p>Resources are things like files, memory, etc.
 They are managed by a resource manager that gives you the possibility to acquire
 a resource and when you don't need to use the resource anymore, then you can
 give it back.

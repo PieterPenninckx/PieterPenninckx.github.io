@@ -66,7 +66,7 @@
         </script>
 
         <div id="sidebar" class="sidebar">
-            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html" class="active"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-recap.html"><strong>6.</strong> Recap</a></li></ul>
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html" class="active"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-summary.html"><strong>6.</strong> Summary</a></li></ul>
         </div>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -86,28 +86,27 @@
                 </div>
 
                 <div id="content" class="content">
-                    <a class="header" href="./resources-in-general-example.html#a-simple-example" id="a-simple-example"><h2>A simple example</h2></a>
-<p>Consider the following pseudo-code.</p>
+                    <a class="header" href="resources-in-general-example.html#a simple example" id="a simple example"><h2>A simple example</h2></a>
+<p>For simplicity, we omit error handling in this example.
+Consider the following pseudo-code.</p>
 <pre><code>WRITE_TO_FILE()
 1   file_descriptor ← OPEN_FILE(&quot;MyDocument.txt&quot;)
 2   text_to_write ← &quot;Hello, World!&quot;
 3   WRITE_TEXT(file_descriptor, text_to_write)
 4   CLOSE_FILE(file_descriptor)
 </code></pre>
-<p>On line 1, we call the function <code>OPEN_FILE</code> with as parameter the
+<p>On line 1, we call the function <code>OPEN_FILE</code> and we pass as parameter the
 name of the file we want to open.
 This function <code>OPEN_FILE</code>, wich we do not give pseudo-code for,
-communicates to the operating system and asks to open the file with the given
-file name.
-For simplicity, we omit error handling in this example.</p>
+communicates with the operating system and asks to open the file with the given
+file name.</p>
 <p>In general, an application can open more than one file.
 So if the application asks the operating system to write to a file, the
-operating system has to know: &quot;which file are you referring to?&quot;.
-For this reason, the function <code>OPEN_FILE</code> returns an identifier
+operating system has to know: &quot;Which file are you referring to?&quot;.
+For this reason, the function <code>OPEN_FILE</code> returns a number
 that will be used later on in the communication with the operating system to
 specify which file the application is talking about.
-In the case of a file, this identifier is called a <em>file descriptor</em>.
-It is usually a number (an integer).
+In the case of a file, the number is called a <em>file descriptor</em>.
 In most libraries, the file descriptor is wrapped in another data
 type that represents the file.
 In our example, we just assume that we get the bare file descriptor.</p>
@@ -115,8 +114,8 @@ In our example, we just assume that we get the bare file descriptor.</p>
 <p>On line 3, we call the function <code>WRITE_TEXT</code> to write this text to the file.
 The function <code>WRITE_TEXT</code> asks the operating system to write the given text
 to a file.
-The first parameter, for which we pass the variable <code>file_descriptor</code> is used
-to specify to which file the text should be written.</p>
+The first parameter, for which we pass the variable <code>file_descriptor</code>
+specifies to which file the text should be written.</p>
 <p>On line 4, we call the function <code>CLOSE_FILE</code> to close the file.
 Again, we pass the variable <code>file_descriptor</code> to specify which file must be
 closed.</p>
