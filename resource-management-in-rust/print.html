@@ -101,7 +101,7 @@ Consider the following pseudo-code.</p>
 </code></pre>
 <p>On line 1, we call the function <code>OPEN_FILE</code> and we pass as parameter the
 name of the file we want to open.
-This function <code>OPEN_FILE</code>, wich we do not give pseudo-code for,
+This function <code>OPEN_FILE</code>, which we do not give pseudo-code for,
 communicates with the operating system and asks to open the file with the given
 file name.</p>
 <p>In general, an application can open more than one file.
@@ -123,7 +123,7 @@ specifies to which file the text should be written.</p>
 <p>On line 4, we call the function <code>CLOSE_FILE</code> to close the file.
 Again, we pass the variable <code>file_descriptor</code> to specify which file must be
 closed.</p>
-<p>Excercise. In the previous example, the programmer can make a bug for instance
+<p>Exercise. In the previous example, the programmer can make a bug for instance
 by forgetting to close the file. There are many mistakes like that.
 Write down a number of them. We will come back to this later on.</p>
 <a class="header" href="print.html#what is a resource" id="what is a resource"><h2>What is a resource</h2></a>
@@ -135,7 +135,7 @@ Other examples of resources include</p>
 <li>a network socket,</li>
 <li>a connection to a server,</li>
 <li>a block of memory,</li>
-<li>access to the screen, soundcard, printer or any other device,</li>
+<li>access to the screen, sound card, printer or any other device,</li>
 <li>a mutual exclusive lock.</li>
 </ul>
 <p>Some resources correspond to physical devices, other correspond to virtual
@@ -146,7 +146,7 @@ In the introduction example for instance, the handle was a file descriptor.</p>
 <p>When a process wants to access a resource, it asks the resource manager for a
 handle that gives access to the resource.
 In the introduction example, the function <code>OPEN_FILE</code> asked the operating system
-(the resource manager) for a file descriptor (the handle) that gives acces to
+(the resource manager) for a file descriptor (the handle) that gives access to
 the file (the resource).
 The resource manager may refuse access, or open the resource on behalf
 of the process and hand over the handle to the process.
@@ -160,7 +160,7 @@ When the resource manager is informed that a resource is not needed anymore,
 it can either close the resource, or it knows that
 the resource can be re-used by another process that wants to use the resource again.</p>
 <p>In general, using a resource looks as follows:</p>
-<pre><code>USE_RESOURCE()
+<pre><code>GENERAL_FLOW_OF_USING_A_RESOURCE()
 1   handle ← OPEN_RESOURCE(parameters)
 2   USE_RESOURCE(handle)
 3   RELEASE_RESOURCE(handle)
@@ -192,14 +192,14 @@ the numbers in the first element of the vector.</p>
     numbers[0] = numbers[0] + numbers[1] + numbers[2];
 }
 </code></pre>
-<p>and in Javascript</p>
+<p>and in JavaScript</p>
 <pre><code class="language-javascript">function ComputeSum() {
     var numbers = [1, 2, 3];
     numbers[0] = numbers[0] + numbers[1] + numbers[2];
 }
 </code></pre>
-<p>If you more familiar with a programming language for which no example was
-given, you can probably write down this simple function yourself.</p>
+<p>If you are more familiar with a programming language for which no example was
+given, you can write down this function in that language as an exercise.</p>
 <p>On the first line in the function body, an array is created, containing the
 numbers one, two and three.
 When any of the examples above is executed, under the hood, a part
@@ -219,7 +219,7 @@ program would crash. In practice, there is a piece of your application that
 prevents this from happening: the garbage collector.</p>
 <a class="header" href="print.html#garbage collectors" id="garbage collectors"><h2>Garbage collectors</h2></a>
 <p>In the previous section, we illustrated that in many programming
-languages, the programmer does not have to explicitely write instructions to
+languages, the programmer does not have to explicitly write instructions to
 release memory is no longer needed.
 But if the application were to only reserve more
 and more memory, it would soon run out of memory. So ultimately, somehow the
@@ -235,7 +235,7 @@ It then releases these pieces of memory.</p>
 One technique, called 'reference counting', can be implemented relatively easily
 and requires only a little help from the programming language.
 Other techniques require extensive support from the programming language.</p>
-<p>Most recent programming languages, including Python, Javascript, Java, C# and
+<p>Most recent programming languages, including Python, JavaScript, Java, C# and
 Go, offer extensive support for garbage collecting. In these languages, you
 typically rely on the garbage collector for nearly everything you do, as is
 illustrated in the previous section.</p>
@@ -252,7 +252,7 @@ program and then realize that you never used reference counting.</p>
 to the resource is stored in memory as well.
 So if you want to use memory, then you need to get a handle that gives access to the memory.
 You then need to store this handle in memory, and for this, you have to acquire memory.
-Eum... this is a &quot;the chicken or the egg&quot; dilemma!</p>
+Err... this is a &quot;the chicken or the egg&quot; dilemma!</p>
 <p>This dilemma is solved by giving each application a dedicated piece of
 memory that can be used without acquiring or releasing it.
 In fact, each application gets at least two dedicated pieces of memory.</p>
@@ -263,7 +263,7 @@ or string constants). This is called <em>static memory</em>.
 You can do complicated stuff with static memory, but for simplicity, let us
 assume that you will only want to store constants in static memory.</p>
 <p>Secondly, there is a piece of memory that is used to store the local variables
-of the functions and the parameters that are passed to the functions
+of the functions and the arguments that are passed to the functions
 (and some other stuff as well).
 This is called the <em>stack</em>.
 There is one stack per thread.
@@ -273,7 +273,7 @@ When a function call is made, a piece of the stack is used to store the local
 variables of the function and the parameters to that function and when the function
 is finished, this piece of memory is released.</p>
 <p>This means that after a function call is finished, the memory that was used to
-store the local variables of the function or the parameters that ware passed to
+store the local variables of the function or the arguments that were passed to
 that function, can be re-used for something completely else.
 So you cannot expect the values that were stored in that piece of memory are
 still intact. This implies that you cannot use the stack to store data that you
@@ -283,31 +283,29 @@ chicken-and-egg dilemma we mentioned earlier.
 In some situations however, this is not enough.
 When you don't know how much memory you will need at compile time, you can't use
 static memory (in general).
-And when you need to store memory for a longer time, you can't store it on
-the stack.
+And when you need to store memory longer than the duration of the function call
+(without returning it from the function), you can't store it on the stack.
 If you want to use some memory for a longer time and you can only know at run
 time how much memory you will need, you can acquire a piece of memory that is
 not in static memory and not on the stack.
 We say that this is &quot;on the heap&quot;.</p>
 <p>This is just the same as with any other kind of resource we discussed before!
-Memory on the heap has to be acquired explicitely and must be resude after use,
+Memory on the heap has to be acquired explicitly and must be released after use,
 either as a consequence of an explicit instruction in the program, or because
 the garbage collector takes care of that.
-Also for memory, the operating system has the role of resource manager, and it
-distributes handles (memory adresses) that can be used by the processes.
-But this is very low level stuff and it also has a large overhead because
-you need a system call to the operation system, which is relatively expensive.
-So there is a dynamic memory management library that plays an intermediate role
-between the application and the operating system. It asks the operation system
-for pieces of memory in larger chunks (typically 4kB or more) and distributes
-smaller pieces of this to the application. In this way, it avoids having to do
-a system call for each and every small piece of memory that the application
-needs.</p>
-<p>This memory management library plays the role of a resource manager.
-You can ask it to give an amount of memory and it negociates with the operating
-system for you.
-From the point of view of the application, it's still a resource manager where
-you have to acquire a piece of memory and release it after use.</p>
+For memory, a dynamic memory management library has the role of
+resource manager and it distributes handles (memory addresses) that can be
+used by the processes.
+The process can ask the dynamic memory management library for an arbitrary
+amount of bytes and (if there is still memory available), the dynamic memory
+management library returns the memory address of the beginning of a contiguous
+region of memory that is not yet being used. The process can then use this
+region of memory at will, but must instruct the dynamic memory library to
+release the memory after use.</p>
+<p>The dynamic memory management library plays an intermediate role
+between the application and the operating system. In this way, it avoids
+having to do a system call -- which is rather 'expensive' -- for each and
+every small piece of memory that the application needs.</p>
 <p>Note that a garbage collector is not the same as a dynamic memory management
 library.
 A dynamic memory management library requires you to tell explicitly
@@ -353,8 +351,8 @@ string. The only reason for this is to simplify the example.</p>
 <pre><code class="language-rust">    file.write_all(text_to_write)?;
 </code></pre>
 <p>Again, the question mark is for error handling.
-You can ignore the <code>&amp;mut</code> for now, you will encounter it many times later on.
-In essence, it is just as in the pseudo-code example: we pass the handle
+You can ignore the <code>&amp;mut</code> for now, you will encounter it many times later on.</p>
+<p>In essence, it is just as in the pseudo-code example: we pass the handle
 (the variable <code>file</code>) and the text we want to write to the a function that
 asks the operating system to do the real work.</p>
 <p>The <code>return Ok(());</code> is again for error handling and it indicates that no
@@ -373,12 +371,12 @@ constant, it is stored in static memory.</li>
 function <code>File::create</code> does not expect the file name itself as a parameter,
 but only the memory address of the file name and the length.
 Because the file name is stored in static memory, its memory address is in
-fact a constant (TODO: this needs to be fact checked) and this constant can
-be stored as part of the CPU-instructions of the application.
+fact a constant and this constant can be stored as part of the
+CPU-instructions of the application.
 Also the length of the file-name is a constant.</li>
 <li>When the function <code>File::create</code> is called, the function <code>File::create</code> also
 needs some resources. For instance, it stores its parameters (in this
-case the memory address and the length of the filename) on the stack while
+case the memory address and the length of the file name) on the stack while
 it executes.</li>
 <li>Of course, the open file itself is also a resource used by the
 application. A handle to this file (a file descriptor) is stored in
@@ -391,8 +389,8 @@ in the example. In fact, <code>&amp;</code> means &quot;take the memory address 
 The <code>mut</code> indicates that the function <code>File::write_all</code> has exclusive
 access to this memory address while it is executed. This will be explained
 in further detail when we talk about &quot;borrowing as mutable&quot;.</li>
-<li>The function <code>File::write_all</code> also expectsthe memory address and the length
-of the data to be written. This is similar to the filename parameter of the
+<li>The function <code>File::write_all</code> also expects the memory address and the length
+of the data to be written. This is similar to the file name parameter of the
 function <code>File::create</code>.</li>
 <li>The caller of <code>write_to_file</code> will store the return value of
 <code>write_to_file</code>.</li>
@@ -406,7 +404,7 @@ return to. This information is also stored on the stack.</li>
 Rust programming language.</p>
 <p>First, because the variable <code>file</code> stores a handle that corresponds to the file
 we opened, we say that it is the <em>owner</em> of the file.
-The variable file is responsible for closing the file.
+The variable <code>file</code> is responsible for closing the file.
 This will happen when the variable goes out of scope.
 In general, any resource owner is responsible for releasing the resource it owns.</p>
 <p>TODO: explain <em>borrowing</em> with the example.</p>
@@ -497,7 +495,7 @@ somewhere else.
 Hence it's also not called &quot;copying&quot;, it is called <em>moving</em> instead.
 We say that the value that holds the handle has <em>move semantics</em>.
 This move can be done by a simple variable assignment.
-When you assing a variable to a new variable, the new variable is the owner
+When you assign a variable to a new variable, the new variable is the owner
 of the resource.
 The old variable still holds the handle, but it cannot be used anymore: the
 compiler disallows this and the <code>drop()</code> function will not be called anymore
@@ -589,7 +587,7 @@ within the <code>FileSystem</code> module.</p>
             unsafe {
                 // the internals of a type that communicates with a resource
                 // manager are typically unsafe.
-                // We ommit it here.
+                // We omit it here.
             }
         }
         // Incomplete code, to be continued.
@@ -601,7 +599,7 @@ not the focus of this document.</p>
 <p>Note that the function <code>ask_operating_system_for_file_descriptor</code> is not marked
 <code>pub</code>, so it can only be called from within the module.
 In the function <code>open</code>, we already saw how it can be called.
-Note the syntaxis <code>File::ask_operating_system_for_file_descriptor</code>.
+Note the syntax <code>File::ask_operating_system_for_file_descriptor</code>.
 Because the function <code>ask_operating_system_for_file_descriptor</code> is defined in
 the <code>impl</code> block of the type <code>File</code>, you have to specify the type, even when the function
 does not have a parameter of type <code>File</code> or return a value of type <code>File</code>.
@@ -620,7 +618,7 @@ we are in the <code>impl File</code> block).
 Type <code>&amp;File</code> means an immutable reference to a value of type <code>File</code>.
 This implies that any borrower that borrows a value of type <code>File</code> as immutable
 has access to read bytes from the file.
-It also allows a special syntaxis: if <code>file</code> is a variable of type <code>File</code> or of type
+It also allows a special syntax: if <code>file</code> is a variable of type <code>File</code> or of type
 <code>&amp;File</code> or of type <code>&amp;mut File</code>, then you can write <code>file.read_byte(3)</code> to
 read the third byte from the file.</p>
 <p>To simplify the matter, we assume that we will simply crash the current thread
@@ -633,7 +631,7 @@ from the file.</p>
 <pre><code class="language-rust">        // Still in the `impl` block.
         pub fn file_size_in_bytes(&amp;self) -&gt; usize {
             unsafe {
-                // Also ommitted.
+                // Also omitted.
             }
         }
         // Incomplete code, to be continued.
@@ -644,14 +642,14 @@ that borrows the value of type <code>File</code> as immutable.</p>
 <pre><code class="language-rust">        // Still in the `impl block.
         pub fn write_byte(&amp;mut self, index: usize, byte_to_write: u8) {
             unsafe {
-                // Ommitted.
+                // Omitted.
             }
         }
     } // Close the impl block. Incomplete code, to be continued.
 </code></pre>
 <p>This function takes an <code>&amp;mut self</code> parameter.
 It indicates that this function is restricted to references as mutable only.
-Refferences as immutable cannot be passed to this function (because they have
+References as immutable cannot be passed to this function (because they have
 a different data type).
 In this way, access to write a byte to a file is restricted to references as mutable.
 So you can only write to a file if you borrow it as mutable, not as immutable.</p>
@@ -669,7 +667,7 @@ Let's see how the file <code>File</code> ensures that the file is closed properl
     }
 } // End of the `FileSystem` module.
 </code></pre>
-<p>Here we see the syntaxis <code>impl Drop for File</code> is used to indicate that the
+<p>Here we see the syntax <code>impl Drop for File</code> is used to indicate that the
 <code>File</code> struct implements the <code>Drop</code> trait.
 The implementation can be found in the block immediately below.
 The <code>Drop</code> trait defines only one function, called <code>drop</code> that takes one
@@ -677,7 +675,7 @@ The <code>Drop</code> trait defines only one function, called <code>drop</code> 
 The implementation is again typically unsafe code that does communication
 with an external API offered by the operating system.
 What happens here is that the operating system is instructed to close the
-file with the <code>file_descriptor</code> that was required during the initialisation.</p>
+file with the <code>file_descriptor</code> that was required during the initialization.</p>
 <p>Let us now see how the <code>File</code> struct can be used in practice.
 We assume that the file struct is used outside of the <code>FileSystem</code> module.
 Let us write a completely inappropriate method to copy data from one file to
@@ -696,7 +694,7 @@ fn copy_file(source_filepath: &amp;FilePath, destination_filepath: &amp;FilePath
 </code></pre>
 <p>On the first line of the function, we open the source file.
 The value is immutable by default.
-Note the <code>File::open(...)</code> syntaxis for calling a method associated to a type.
+Note the <code>File::open(...)</code> syntax for calling a method associated to a type.
 On the second line, we open the destination file.
 This value is defined as mutable.
 The third line is very interesting.
@@ -707,7 +705,7 @@ Note that we do not write <code>drop(...)</code>, the compiler automatically ins
 call for us.</p>
 <p>Maybe it's time to let this sink a little, because this illustrates the foundation of
 Rusts resource management.</p>
-<p>Ok, on to the function that copies data.
+<p>OK, on to the function that copies data.
 As we already noted, this function borrows <code>source_file</code> as immutable and
 <code>destination_file</code> as mutable.</p>
 <pre><code class="language-rust">// Still outside the FileSystem module.
@@ -722,20 +720,20 @@ fn copy_data(source: &amp;File, destination: &amp;mut File) {
 </code></pre>
 <p>The signature clarifies that <code>source</code> is borrowed as immutable from somewhere
 and <code>destination</code> is borrowed as mutable.
-When calling the <code>file_size_in_bytes</code> function, we use a syntaxis we didn't use
+When calling the <code>file_size_in_bytes</code> function, we use a syntax we didn't use
 before.
-An equivalent, but not as beautifull syntaxis would be
+An equivalent, but not as beautiful syntax would be
 <code>let length = File::file_size_in_bytes(source);</code>.
-Instead of passing the <code>&amp;self</code> parameter explicitely,
+Instead of passing the <code>&amp;self</code> parameter explicitly,
 we use the dot-operator to call the function as is common in object-oriented languages.</p>
 <p>Next comes a for-loop, where we loop over the indexes of all bytes in the source
 file.</p>
 <p>In the for-loop, we first read a byte from the <code>source</code>.
-Again, note the syntaxis for this.
+Again, note the syntax for this.
 Then we write it to the destination.</p>
 <p>Then we write the byte we have just read to the <code>destination</code> file.
 Remember that the <code>File::write_byte</code> expects an <code>&amp;mut self</code> parameter.
-Here, <code>destination</code> is passed implicitely as the <code>&amp;mut self</code> parameter, so it
+Here, <code>destination</code> is passed implicitly as the <code>&amp;mut self</code> parameter, so it
 must have type <code>&amp;mut File</code>. This is why the function <code>copy_data</code> expects the
 parameter <code>destination</code> to be of type <code>&amp;mut File</code>.</p>
 <a class="header" href="print.html#summary" id="summary"><h1>Summary</h1></a>

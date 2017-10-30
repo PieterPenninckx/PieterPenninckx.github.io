@@ -126,8 +126,8 @@ string. The only reason for this is to simplify the example.</p>
 <pre><code class="language-rust">    file.write_all(text_to_write)?;
 </code></pre>
 <p>Again, the question mark is for error handling.
-You can ignore the <code>&amp;mut</code> for now, you will encounter it many times later on.
-In essence, it is just as in the pseudo-code example: we pass the handle
+You can ignore the <code>&amp;mut</code> for now, you will encounter it many times later on.</p>
+<p>In essence, it is just as in the pseudo-code example: we pass the handle
 (the variable <code>file</code>) and the text we want to write to the a function that
 asks the operating system to do the real work.</p>
 <p>The <code>return Ok(());</code> is again for error handling and it indicates that no

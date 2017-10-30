@@ -100,12 +100,12 @@ constant, it is stored in static memory.</li>
 function <code>File::create</code> does not expect the file name itself as a parameter,
 but only the memory address of the file name and the length.
 Because the file name is stored in static memory, its memory address is in
-fact a constant (TODO: this needs to be fact checked) and this constant can
-be stored as part of the CPU-instructions of the application.
+fact a constant and this constant can be stored as part of the
+CPU-instructions of the application.
 Also the length of the file-name is a constant.</li>
 <li>When the function <code>File::create</code> is called, the function <code>File::create</code> also
 needs some resources. For instance, it stores its parameters (in this
-case the memory address and the length of the filename) on the stack while
+case the memory address and the length of the file name) on the stack while
 it executes.</li>
 <li>Of course, the open file itself is also a resource used by the
 application. A handle to this file (a file descriptor) is stored in
@@ -118,8 +118,8 @@ in the example. In fact, <code>&amp;</code> means &quot;take the memory address 
 The <code>mut</code> indicates that the function <code>File::write_all</code> has exclusive
 access to this memory address while it is executed. This will be explained
 in further detail when we talk about &quot;borrowing as mutable&quot;.</li>
-<li>The function <code>File::write_all</code> also expectsthe memory address and the length
-of the data to be written. This is similar to the filename parameter of the
+<li>The function <code>File::write_all</code> also expects the memory address and the length
+of the data to be written. This is similar to the file name parameter of the
 function <code>File::create</code>.</li>
 <li>The caller of <code>write_to_file</code> will store the return value of
 <code>write_to_file</code>.</li>
