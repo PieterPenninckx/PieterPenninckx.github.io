@@ -66,7 +66,7 @@
         </script>
 
         <div id="sidebar" class="sidebar">
-            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html" class="active"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-summary.html"><strong>6.</strong> Summary</a></li></ul>
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./memory-and-data-structures.html"><strong>3.</strong> Memory and data structures</a></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>4.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>4.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>4.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>4.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>5.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html" class="active"><strong>5.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>5.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>5.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>6.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-summary.html"><strong>7.</strong> Summary</a></li></ul>
         </div>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -87,27 +87,35 @@
 
                 <div id="content" class="content">
                     <a class="header" href="ownership-in-short.html#ownership is the responsibility to release the resource" id="ownership is the responsibility to release the resource"><h2>Ownership is the responsibility to release the resource</h2></a>
-<p>Ownership means having a handle that gives access to a resource.
-This can be any type of resource: a piece of memory, a file, or anything that
-your operating system might offer.
-This handle is stored in a value.
-A value is a piece of memory, but not just any piece of memory: a piece of memory
-of which you know what it is supposed to store.
-Rust is a typed language: any value has a specific data type: so that you know
-if it stores an integer, a struct, enum, utf-8 encoded string or whatever.
-This data type gives the application at compile time insight on what this value
-can be used for.
-When a value is an owner, this means that it contains a handle that gives access
-to a resource.</p>
-<p>In order to keep things easy, creating a value that acts as an owner, is the
-same acquiring the handle that gives you access to the resource.
-When this value goes out of scope -- directly , because it's a local variable
-and the function ends, or indirectly because it's stored in a piece of memory
-that is released -- then the <code>drop()</code> function is called on that specific type
-that corresponds to the value.
-This <code>drop()</code> function asks the resource manager to release the resource.
-This is part of how Rust ensures that resources cannot be used after you have
-released it.</p>
+<p>We say that some piece of data owns a resource when it contains within its data
+structure a handle to the resource and additionally it has the responsibility
+to release the resource after use.
+The resource can be of any type: a piece of memory, a file, or anything that
+your operating system might offer.</p>
+<p>Remember the exercise at the very beginning where I asked what kinds of errors
+the programmer can make?
+Rust's ownership concept prevents (among others) the following two problems:</p>
+<ol>
+<li>using an uninitialised handle that does not really correspond to a resource,</li>
+<li>using a handle after the resource has already been released.</li>
+</ol>
+<p>The first problem is prevented by ensuring that an owner can only be created
+after the resource has been acquired. E.g. a program can only instantiate a
+variable of the type <code>File</code> after it successfully opened or created a file.</p>
+<p>The second problem is prevented by automatically releasing the resource
+corresponding to the owner when the owner goes out of scope and by having no
+other means to release the resource.
+Data types that directly store a handle need to implement the <code>Drop</code>
+trait that offers the <code>drop()</code> function.
+(Data types that only indirectly store a handle don't have to, see below (TODO:
+write that section).)
+The <code>drop()</code> function asks the resource manager to release the resource
+and cannot be called directly.
+The compiler automatically inserts a call to the <code>drop()</code> function when
+the owner goes out of scope.</p>
+<p>Both mechanisms rely both on language features and on correct API design (
+e.g. of the API that offers the <code>File</code> data type).
+We will <a href="./an-example-of-providing-a-resource-in-rust.md">illustrate the importance of correct API design</a> below.</p>
 
                 </div>
 

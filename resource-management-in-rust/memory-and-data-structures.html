@@ -1,0 +1,287 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Memory and data structures - Resource management in Rust</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Resource management in the Rust programming language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <base href="">
+
+        <link rel="stylesheet" href="book.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <link rel="shortcut icon" href="favicon.png">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme -->
+        
+
+        
+
+        <!-- Fetch Clipboard.js from CDN but have a local fallback -->
+        <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+        <script>
+            if (typeof Clipboard == 'undefined') {
+                document.write(unescape("%3Cscript src='clipboard.min.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch JQuery from CDN but have a local fallback -->
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined') {
+                document.write(unescape("%3Cscript src='jquery.js'%3E%3C/script%3E"));
+            }
+        </script>
+
+        <!-- Fetch store.js from local - TODO add CDN when 2.x.x is available on cdnjs -->
+        <script src="store.js"></script>
+
+        <!-- Custom JS script -->
+        
+
+    </head>
+    <body class="light">
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme = store.get('theme');
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            $('body').removeClass().addClass(theme);
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var sidebar = store.get('sidebar');
+            if (sidebar === "hidden") { $("html").addClass("sidebar-hidden") }
+            else if (sidebar === "visible") { $("html").addClass("sidebar-visible") }
+        </script>
+
+        <div id="sidebar" class="sidebar">
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./memory-and-data-structures.html" class="active"><strong>3.</strong> Memory and data structures</a></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>4.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>4.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>4.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>4.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>5.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>5.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>5.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>5.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>6.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-summary.html"><strong>7.</strong> Summary</a></li></ul>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page" tabindex="-1">
+                <div id="menu-bar" class="menu-bar">
+                    <div class="left-buttons">
+                        <i id="sidebar-toggle" class="fa fa-bars"></i>
+                        <i id="theme-toggle" class="fa fa-paint-brush"></i>
+                    </div>
+
+                    <h1 class="menu-title">Resource management in Rust</h1>
+
+                    <div class="right-buttons">
+                        <i id="print-button" class="fa fa-print" title="Print this book"></i>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <a class="header" href="memory-and-data-structures.html#memory and data structures" id="memory and data structures"><h2>Memory and data structures</h2></a>
+<a class="header" href="memory-and-data-structures.html#values and references" id="values and references"><h1>Values and references</h1></a>
+<p>I will give some examples in C# in this section, but you should be able to
+understand what is going on if even if you don't know C#.</p>
+<p>Consider the following piece of code:</p>
+<pre><code class="language-C#">void ValueType() {
+    int i = 1;
+    int j = i;
+    i = 2;
+    Console.WriteLine(j);
+}
+</code></pre>
+<p>The statement <code>int j = i</code> makes sure that a new place in memory is reserved to
+hold the value of the variable <code>b</code>. The value of <code>i</code> is copied to this new place
+in memory. When we write <code>i = 2</code>, the value of <code>i</code> is changed.
+Because <code>i</code> and <code>j</code> do not share any memory, the value of <code>j</code> is unchanged and
+<code>Console.WriteLine(j)</code> will print &quot;1&quot;.</p>
+<p>This contrasts with the following piec of code, still in C#:</p>
+<pre><code class="language-C#">class A {
+    int X;
+}
+
+void ReferenceType() {
+    A a = new A{
+        X = 1
+    };
+    A b = a;
+    a.X = 2;
+    Console.WriteLine(b.X);
+}
+</code></pre>
+<p>When this function is executed, the output will be &quot;2&quot; instead of &quot;1&quot;.
+Similar behaviour can be observed in other languages, like Java, Python,
+JavaScript etc.
+This is confusing at first, so I will explain in detail what is going on.
+To explain why we get a different output, let us step trough the example.</p>
+<p>The statement</p>
+<pre><code>A a = new A {
+    X = 1
+};
+</code></pre>
+<p>creates a new variable named <code>a</code> and assigns a new value of type <code>A</code> to it.
+The new value has its field <code>X</code> initialised to <code>1</code>.
+But under the hood, a lot more is going on.
+To store the value, a piece of memory is allocated to
+store the values of all the fields (in this case only
+the field <code>X</code>) plus some data that is needed for polymorphism.
+The memory address of this piece of memory is then stored in <code>a</code>.
+Let me rephrase that: <code>a</code> only contains no actual data, but only the memory
+address of the region in memory where the data is stored.
+The assignment <code>A b = a;</code> creates a new variable named <code>b</code> and stores the
+same memory address that <code>a</code> already has in this new variable <code>b</code>.
+The assignment <code>a.X = 2;</code> essentially says the following:</p>
+<ul>
+<li>Get a memory address out of the variable <code>b</code>. This memory address marks the
+first byte of a region in memory.</li>
+<li>Assign <code>2</code> to the value of the field <code>X</code> that can be found in that region.</li>
+</ul>
+<p>The next line, <code>Console.WriteLine(b.X);</code>, then essentially says the following:</p>
+<ul>
+<li>Get a memory address out of the variable <code>b</code>. This memory address marks the
+first byte of a region in memory.</li>
+<li>Get the value of the field <code>X</code> that can be found in that region.</li>
+<li>Print out that value.</li>
+</ul>
+<p>Now because <code>a</code> and <code>b</code> hold the same memory address, they essentially still
+represent the same object and &quot;2&quot; is printed out.</p>
+<p>I think we can agree that there is a big difference between the first example
+and the second.
+The difference is that, in C#, <code>int</code> is a <em>value type</em> and the class <code>A</code> is a
+<em>reference type</em>.
+A value type is a data type for which the variables store the data directly.
+A reference type is a data type that contains the memory address of the region
+in memory where the data is stored.
+Most programming languages have both value types and reference types.
+Primitive data types, like integers, booleans, floating numbers, are most often
+value types and classes are reference types.
+In Java, <code>int</code> is a value type and <code>Integer</code> is a reference type (and similar
+for some other primitive types).
+Strings are tricky business in any language (at least in my opinion).</p>
+<a class="header" href="memory-and-data-structures.html#value types and reference types in rust" id="value types and reference types in rust"><h3>Value types and reference types in Rust</h3></a>
+<p>Most languages need to distinguish value types from reference types because the
+reference (taking the memory address or following a memory address) is implicit.
+In Rust, references are (nearly) always explicit.
+For this reason, one rarely talks about value types and reference types in Rust.</p>
+<p>Let us &quot;translate&quot; the first example from C# to Rust:</p>
+<pre><code class="language-rust">fn value_type() {
+    let i : i32 = 1;
+    let j : i32 = i;
+    i = 2;
+    println!(&quot;{}&quot;, j);
+}
+</code></pre>
+<p>This is very close to the C# example, in particular, the value of <code>i</code> is copied
+to the value of <code>j</code>.</p>
+<p><code>struct</code>s in Rust are more similar to <code>struct</code>s in C# or D than to classes in
+other languages. So the following example is only seemingly similar to the
+second example in C# given above. In fact, the output is completely different.</p>
+<pre><code class="language-rust">#[derive(Clone, Copy)]
+struct A {
+    x: i32
+}
+
+fn still_value_type() {
+    let mut a : A = A {x : 1};
+    let b : A = a;
+    a.x = 2;
+    println!(&quot;{}&quot;, b.x);
+}
+</code></pre>
+<p>There is not a single <code>&amp;</code> to be found in this code snipplet and it is very
+self-containing, so you can be pretty sure there is no reference anywhere in the
+code you see.
+And indeed, when the function is called, the whole value of <code>a</code> is copied to <code>b</code>
+(which is even made obvious with the <code>#[derive(Clone, Copy)]</code> notation) and
+hence <code>a</code> and <code>b</code> represent completely different entities.</p>
+<p>If we were to try to mimick the C# example, we would have something like the
+following:</p>
+<pre><code class="language-rust">#[derive(Clone, Copy)]
+struct A {
+    x: i32
+}
+
+fn try_to_immitate_reference_type() {
+    let a : &amp;mut A = &amp;mut A {x : 1};
+    let b : &amp;mut A = a;
+    a.x = 2;
+    println!(&quot;{}&quot;, b.x);
+}
+</code></pre>
+<p>See the <code>&amp;</code>s in the code? This indicates that there is a reference.
+The problem with this code is that it does not even compile.
+Why?
+Let us look again at the second example in C#:</p>
+<pre><code>    // ...
+    a.X = 2;                (1)
+    Console.WriteLine(b.X); (2)
+</code></pre>
+<p>You need more context to know whether line (1) affects the output on line (2).
+In the simple example, the context was just a few lines above, but in more
+complicated code and especially with more complicated data structures, it can
+become hard to know where exactly data is being modified.</p>
+<a class="header" href="memory-and-data-structures.html#data structures and the stack and the heap in rust" id="data structures and the stack and the heap in rust"><h3>Data structures and the stack and the heap in Rust</h3></a>
+<p>TODO: Explain that in Rust,
+containers like <code>Box</code>, <code>Vec</code>, <code>HashMap</code> etc. store whatever they
+contain on the heap, but that a plain <code>struct</code>, <code>enum</code>, tuple, array, closure is
+on the stack (unless it is contained in a container).</p>
+<p>TODO: explain what a 'value' is.</p>
+
+                </div>
+
+                <!-- Mobile navigation buttons -->
+                
+                    <a rel="prev" href="./not-all-memory-needs-to-be-acquired.html" class="mobile-nav-chapters previous">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a rel="next" href="./an-example-of-using-a-resource-in-rust.html" class="mobile-nav-chapters next">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+
+            </div>
+
+            
+                <a href="./not-all-memory-needs-to-be-acquired.html" class="nav-chapters previous" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            
+
+            
+                <a href="./an-example-of-using-a-resource-in-rust.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+            
+
+        </div>
+
+
+        <!-- Local fallback for Font Awesome -->
+        <script>
+            if ($(".fa").css("font-family") !== "FontAwesome") {
+                $('<link rel="stylesheet" type="text/css" href="_FontAwesome/css/font-awesome.css">').prependTo('head');
+            }
+        </script>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        
+
+        
+
+        
+
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+    </body>
+</html>

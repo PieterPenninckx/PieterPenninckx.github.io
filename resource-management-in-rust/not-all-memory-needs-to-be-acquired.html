@@ -66,7 +66,7 @@
         </script>
 
         <div id="sidebar" class="sidebar">
-            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html" class="active"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>3.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>3.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>3.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>3.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>4.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>4.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>4.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>4.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>5.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-summary.html"><strong>6.</strong> Summary</a></li></ul>
+            <ul class="chapter"><li><a href="./resources-in-general.html"><strong>1.</strong> Resources in general</a></li><li><ul class="section"><li><a href="./resources-in-general-example.html"><strong>1.1.</strong> Example</a></li><li><a href="./what-is-a-resource.html"><strong>1.2.</strong> What is a resource</a></li></ul></li><li><a href="./memory-as-a-resource.html"><strong>2.</strong> Memory as a resource</a></li><li><ul class="section"><li><a href="./memory-as-a-resource-example.html"><strong>2.1.</strong> Example</a></li><li><a href="./garbage-collectors.html"><strong>2.2.</strong> Garbage collectors</a></li><li><a href="./not-all-memory-needs-to-be-acquired.html" class="active"><strong>2.3.</strong> Not all memory needs to be acquired</a></li></ul></li><li><a href="./memory-and-data-structures.html"><strong>3.</strong> Memory and data structures</a></li><li><a href="./an-example-of-using-a-resource-in-rust.html"><strong>4.</strong> An example of using a resource in Rust</a></li><li><ul class="section"><li><a href="./resources-used-in-the-example.html"><strong>4.1.</strong> Resources used in the example</a></li><li><a href="./stepping-trough-the-example.html"><strong>4.2.</strong> Stepping through the example</a></li><li><a href="./core-concepts-illustrated.html"><strong>4.3.</strong> Some core concepts illustrated</a></li></ul></li><li><a href="./core-concepts-overview.html"><strong>5.</strong> Core concepts</a></li><li><ul class="section"><li><a href="./ownership-in-short.html"><strong>5.1.</strong> Ownership is the responsibility to release the resource</a></li><li><a href="./borrowing-in-short.html"><strong>5.2.</strong> Borrowing is having access</a></li><li><a href="./moving-in-short.html"><strong>5.3.</strong> Moving is transfer of ownership</a></li></ul></li><li><a href="./an-example-of-providing-a-resource-in-rust.html"><strong>6.</strong> An example of providing a resource in Rust</a></li><li><a href="./intro-summary.html"><strong>7.</strong> Summary</a></li></ul>
         </div>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -87,14 +87,9 @@
 
                 <div id="content" class="content">
                     <a class="header" href="not-all-memory-needs-to-be-acquired.html#not all memory needs to be acquired" id="not all memory needs to be acquired"><h2>Not all memory needs to be acquired</h2></a>
-<p>Memory as a resource is a special case, because the handle that gives access
-to the resource is stored in memory as well.
-So if you want to use memory, then you need to get a handle that gives access to the memory.
-You then need to store this handle in memory, and for this, you have to acquire memory.
-Err... this is a &quot;the chicken or the egg&quot; dilemma!</p>
-<p>This dilemma is solved by giving each application a dedicated piece of
-memory that can be used without acquiring or releasing it.
-In fact, each application gets at least two dedicated pieces of memory.</p>
+<p>Each application gets at least two dedicated pieces of memory
+that can be used without acquiring or releasing it (apart from the CPU
+registers which you typically only encounter when you program in assembly).</p>
 <p>First there is a piece of memory that can be used by the application for data
 that has a fixed size and lives essentially as long as the application runs.
 It is typically used for constants (e.g. if you want to store the number π,
@@ -117,9 +112,7 @@ that function, can be re-used for something completely else.
 So you cannot expect the values that were stored in that piece of memory are
 still intact. This implies that you cannot use the stack to store data that you
 need for a longer time, longer than the duration of the function call.</p>
-<p>These two pieces of memory -- static memory and the stack -- solve the
-chicken-and-egg dilemma we mentioned earlier.
-In some situations however, this is not enough.
+<p>In some situations however, static memory and the stack are not enough.
 When you don't know how much memory you will need at compile time, you can't use
 static memory (in general).
 And when you need to store memory longer than the duration of the function call
@@ -145,11 +138,29 @@ release the memory after use.</p>
 between the application and the operating system. In this way, it avoids
 having to do a system call -- which is rather 'expensive' -- for each and
 every small piece of memory that the application needs.</p>
-<p>Note that a garbage collector is not the same as a dynamic memory management
-library.
-A dynamic memory management library requires you to tell explicitly
-when you don't need a specific part of memory anymore.</p>
+<p>The garbage collector works on top of the dynamic memory management library.
+The garbage collector analyses both the stack and the heap to determine which
+memory on the heap is not needed anymore.
+When it finds unneeded memory on the heap, it asks the dynamic memory management
+library to release the unneeded memory.</p>
 <p>Acquiring memory access is called <em>memory allocation</em> and releasing memory is called <em>freeing</em>.</p>
+<p>If you haven't heard about the distinction between the stack and the heap yet,
+that's probably because in many languages this distinction does not exist or is
+not so important.</p>
+<p>The concepts of the stack and the heap are important when your software runs
+immediately on the hardware.
+In interpreted or JIT-compiled languages like Python, Javascript, Java and C#,
+the software doesn't run immediately on the hardware, but it is rather executed
+by the Python interpreter, Node.js, the browser, the JVM or the CLR.
+The Python interpreter, Node.js, the browser, the JVM or the CLR use the stack
+and the heap for their own functions, but may hide some aspects of memory
+allocation for the programmer.
+For this reason, in Python and JavaScript the concepts of the stack and
+the heap are not so important.
+In Java and C#, the concept of the stack and the heap exist, but it does not
+need to be the same as the stack and the heap that are offered by the hardware.
+In Java for instance, the &quot;Java Virtual Machine stack&quot; may in fact be allocated
+on the heap.</p>
 
                 </div>
 
@@ -161,7 +172,7 @@ when you don't need a specific part of memory anymore.</p>
                 
 
                 
-                    <a rel="next" href="./an-example-of-using-a-resource-in-rust.html" class="mobile-nav-chapters next">
+                    <a rel="next" href="./memory-and-data-structures.html" class="mobile-nav-chapters next">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
@@ -175,7 +186,7 @@ when you don't need a specific part of memory anymore.</p>
             
 
             
-                <a href="./an-example-of-using-a-resource-in-rust.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
+                <a href="./memory-and-data-structures.html" class="nav-chapters next" title="You can navigate through the chapters using the arrow keys">
                     <i class="fa fa-angle-right"></i>
                 </a>
             
